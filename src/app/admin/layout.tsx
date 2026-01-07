@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { 
   Package, Users, Factory, ShoppingCart,
-  Settings, Boxes, BarChart3, Home, LogOut
+  Settings, Boxes, BarChart3, Home, LogOut, Upload, Cpu
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/device-types", label: "Device Types", icon: Factory },
   { href: "/admin/inventory", label: "Inventory", icon: Boxes },
+  { href: "/admin/firmware", label: "Firmware", icon: Cpu },
   { href: "/admin/tenants", label: "Tenants", icon: Users },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
