@@ -8,7 +8,7 @@ const ingestSchema = z.object({
   legacyDeviceId: z.string().optional(),
   source: z.enum(["sms", "http", "mqtt", "import"]).default("http"),
   rawText: z.string().optional(),
-  data: z.record(z.union([z.number(), z.string()])).optional(),
+  data: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
 });
 
 function parseKeyValuePairs(rawText: string): Record<string, number> {
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     
     if (!validation.success) {
       return NextResponse.json(
-        { error: validation.error.errors[0].message },
+        { error: validation.error.issues[0].message },
         { status: 400 }
       );
     }
