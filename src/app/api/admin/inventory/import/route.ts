@@ -22,9 +22,10 @@ export async function POST(request: Request) {
     }
 
     // Validate device type exists
-    const deviceType = await prisma.deviceType.findUnique({
-      where: { id: BigInt(deviceTypeId) },
-    });
+    const deviceTypes = await prisma.$queryRaw<Array<{ id: bigint }>>`
+      SELECT id FROM device_types WHERE id = ${BigInt(deviceTypeId)}
+    `;
+    const deviceType = deviceTypes[0] || null;
 
     if (!deviceType) {
       return NextResponse.json({ error: "Device type not found" }, { status: 404 });
@@ -64,7 +65,6 @@ export async function POST(request: Request) {
             deviceTypeId: BigInt(deviceTypeId),
             serialNumber,
             imei: imei || null,
-            macAddress: macAddress || null,
             notes: notes || null,
             status: "in_stock",
           },
