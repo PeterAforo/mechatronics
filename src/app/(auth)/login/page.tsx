@@ -33,11 +33,10 @@ function LoginForm() {
       });
 
       // If tenant login succeeds, redirect to portal
-      if (!tenantResult?.error) {
+      if (tenantResult?.ok && !tenantResult?.error) {
         toast.success("Welcome back!");
         const redirectUrl = callbackUrl || "/portal";
-        router.push(redirectUrl);
-        router.refresh();
+        window.location.href = redirectUrl;
         return;
       }
 
@@ -48,11 +47,10 @@ function LoginForm() {
         redirect: false,
       });
 
-      if (!adminResult?.error) {
+      if (adminResult?.ok && !adminResult?.error) {
         toast.success("Welcome back!");
         const redirectUrl = callbackUrl || "/admin";
-        router.push(redirectUrl);
-        router.refresh();
+        window.location.href = redirectUrl;
         return;
       }
 
