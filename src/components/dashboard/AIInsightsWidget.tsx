@@ -2,21 +2,31 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sparkles, X, ChevronRight, Lightbulb, TrendingUp, AlertCircle } from "lucide-react";
+import { Sparkles, X, ChevronRight, Lightbulb, TrendingUp, AlertCircle, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { AIInsight, AIInsightsWidgetProps as BaseProps } from "@/types/dashboard";
 
+// Extended interface for backward compatibility
 interface Insight {
   id: string;
-  type: "optimization" | "anomaly" | "prediction" | "tip";
+  type: "optimization" | "anomaly" | "prediction" | "tip" | "recommendation" | "behavior";
   title: string;
-  description: string;
+  description?: string;
+  summary?: string;
   link?: string;
   linkText?: string;
-  priority: "low" | "medium" | "high";
+  actionLabel?: string;
+  actionHref?: string;
+  priority?: "low" | "medium" | "high";
+  severity?: "info" | "warn" | "critical";
+  deviceId?: string;
+  timestamp?: string;
 }
 
 interface AIInsightsWidgetProps {
   insights: Insight[];
+  maxVisible?: number;
+  rotate?: boolean;
   className?: string;
   onDismiss?: (id: string) => void;
 }
@@ -26,7 +36,16 @@ const insightIcons = {
   anomaly: AlertCircle,
   prediction: Sparkles,
   tip: Lightbulb,
+  recommendation: Brain,
+  behavior: TrendingUp,
 };
+
+// Map severity to priority for backward compatibility
+const severityToPriority = {
+  info: "low",
+  warn: "medium",
+  critical: "high",
+} as const;
 
 const priorityColors = {
   low: "border-l-blue-400 bg-blue-50/50",
@@ -34,23 +53,23 @@ const priorityColors = {
   high: "border-l-red-400 bg-red-50/50",
 };
 
-export function AIInsightsWidget({ insights, className, onDismiss }: AIInsightsWidgetProps) {
+export function AIInsightsWidget({ insights, maxVisible = 5, rotate = true, className, onDismiss }: AIInsightsWidgetProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
-  const visibleInsights = insights.filter((i) => !dismissedIds.has(i.id));
+  const visibleInsights = insights.filter((i) => !dismissedIds.has(i.id)).slice(0, maxVisible);
   const currentInsight = visibleInsights[currentIndex % visibleInsights.length];
 
   useEffect(() => {
-    if (visibleInsights.length <= 1) return;
+    if (!rotate || visibleInsights.length <= 1) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % visibleInsights.length);
     }, 8000);
 
     return () => clearInterval(interval);
-  }, [visibleInsights.length]);
+  }, [visibleInsights.length, rotate]);
 
   const handleDismiss = (id: string) => {
     setDismissedIds((prev) => new Set([...prev, id]));
@@ -61,7 +80,18 @@ export function AIInsightsWidget({ insights, className, onDismiss }: AIInsightsW
     return null;
   }
 
-  const Icon = insightIcons[currentInsight.type];
+  const Icon = insightIcons[currentInsight.type] || Sparkles;
+  
+  // Support both old (priority) and new (severity) props
+  const insightPriority = currentInsight.priority || 
+    (currentInsight.severity ? severityToPriority[currentInsight.severity] : "low");
+  
+  // Support both old (description) and new (summary) props
+  const insightDescription = currentInsight.description || currentInsight.summary || "";
+  
+  // Support both old (link/linkText) and new (actionHref/actionLabel) props
+  const actionLink = currentInsight.link || currentInsight.actionHref;
+  const actionText = currentInsight.linkText || currentInsight.actionLabel || "View details";
 
   return (
     <div
@@ -97,7 +127,7 @@ export function AIInsightsWidget({ insights, className, onDismiss }: AIInsightsW
       <div
         className={cn(
           "p-4 border-l-4 transition-all duration-[var(--duration-normal)]",
-          priorityColors[currentInsight.priority]
+          priorityColors[insightPriority]
         )}
       >
         <div className="flex items-start gap-3">
@@ -106,7 +136,7 @@ export function AIInsightsWidget({ insights, className, onDismiss }: AIInsightsW
               "p-2 rounded-lg shrink-0",
               currentInsight.type === "anomaly"
                 ? "bg-red-100 text-red-600"
-                : currentInsight.type === "optimization"
+                : currentInsight.type === "optimization" || currentInsight.type === "recommendation"
                 ? "bg-emerald-100 text-emerald-600"
                 : currentInsight.type === "prediction"
                 ? "bg-purple-100 text-purple-600"
@@ -117,13 +147,13 @@ export function AIInsightsWidget({ insights, className, onDismiss }: AIInsightsW
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-semibold text-gray-900 mb-1">{currentInsight.title}</h4>
-            <p className="text-sm text-gray-600 leading-relaxed">{currentInsight.description}</p>
-            {currentInsight.link && (
+            <p className="text-sm text-gray-600 leading-relaxed">{insightDescription}</p>
+            {actionLink && (
               <Link
-                href={currentInsight.link}
+                href={actionLink}
                 className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
               >
-                {currentInsight.linkText || "View details"}
+                {actionText}
                 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             )}

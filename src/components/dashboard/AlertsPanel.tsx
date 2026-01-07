@@ -1,22 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, AlertTriangle, Info, ChevronRight, Clock } from "lucide-react";
+import { Bell, AlertTriangle, Info, ChevronRight, Clock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { AlertsPanelProps as NewAlertsPanelProps, AlertItem } from "@/types/dashboard";
 
+// Extended interface for backward compatibility
 interface Alert {
   id: string;
   title: string;
-  severity: "info" | "warning" | "critical";
-  createdAt: Date;
+  description?: string;
+  severity: "info" | "warning" | "critical" | "warn";
+  createdAt?: Date;
+  timestamp?: string;
   deviceName?: string;
+  deviceId?: string;
+  read?: boolean;
 }
 
 interface AlertsPanelProps {
-  alerts: Alert[];
+  alerts?: Alert[];
+  items?: AlertItem[];
   className?: string;
   maxItems?: number;
+  onOpenAlert?: (id: string) => void;
+  onAcknowledge?: (id: string) => void;
 }
 
 const severityConfig = {
@@ -28,6 +38,13 @@ const severityConfig = {
     badge: "bg-blue-50 text-blue-700 border-blue-200",
   },
   warning: {
+    icon: AlertTriangle,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    border: "border-l-amber-400",
+    badge: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  warn: {
     icon: AlertTriangle,
     color: "text-amber-600",
     bg: "bg-amber-50",
@@ -56,9 +73,21 @@ function formatTimeAgo(date: Date): string {
   return `${diffDays}d ago`;
 }
 
-export function AlertsPanel({ alerts, className, maxItems = 5 }: AlertsPanelProps) {
-  const displayAlerts = alerts.slice(0, maxItems);
-  const hasMore = alerts.length > maxItems;
+export function AlertsPanel({ alerts = [], items, className, maxItems = 5, onOpenAlert, onAcknowledge }: AlertsPanelProps) {
+  // Support both old (alerts) and new (items) props
+  const allAlerts: Alert[] = items?.map(item => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    severity: item.severity,
+    timestamp: item.timestamp,
+    deviceName: item.deviceName,
+    deviceId: item.deviceId,
+    read: item.read,
+  })) || alerts;
+  
+  const displayAlerts = allAlerts.slice(0, maxItems);
+  const hasMore = allAlerts.length > maxItems;
 
   return (
     <div
@@ -73,9 +102,9 @@ export function AlertsPanel({ alerts, className, maxItems = 5 }: AlertsPanelProp
         <div className="flex items-center gap-2">
           <Bell className="h-4 w-4 text-gray-500" />
           <h3 className="text-sm font-semibold text-gray-900">Open Alerts</h3>
-          {alerts.length > 0 && (
+          {allAlerts.length > 0 && (
             <Badge variant="secondary" className="text-xs bg-red-50 text-red-700 border-red-200">
-              {alerts.length}
+              {allAlerts.length}
             </Badge>
           )}
         </div>
@@ -115,7 +144,7 @@ export function AlertsPanel({ alerts, className, maxItems = 5 }: AlertsPanelProp
                     )}
                     <span className="flex items-center gap-1 text-xs text-gray-400">
                       <Clock className="h-3 w-3" />
-                      {formatTimeAgo(alert.createdAt)}
+                      {alert.createdAt ? formatTimeAgo(alert.createdAt) : alert.timestamp || ""}
                     </span>
                   </div>
                 </div>
@@ -143,7 +172,7 @@ export function AlertsPanel({ alerts, className, maxItems = 5 }: AlertsPanelProp
             href="/portal/alerts"
             className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
           >
-            +{alerts.length - maxItems} more alerts
+            +{allAlerts.length - maxItems} more alerts
           </Link>
         </div>
       )}

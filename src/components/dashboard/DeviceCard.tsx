@@ -1,14 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Droplets, Zap, Thermometer, Factory, Heart, Shield, Wifi, WifiOff, Clock, ChevronRight } from "lucide-react";
+import { Droplets, Zap, Thermometer, Factory, Heart, Shield, Wifi, WifiOff, Clock, ChevronRight, Signal, Battery } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { DeviceCardProps as NewDeviceCardProps, Device, DeviceStatus } from "@/types/dashboard";
 
+// Extended props for backward compatibility
 interface DeviceCardProps {
-  id: string;
-  name: string;
-  category: string;
-  status: "active" | "inactive" | "suspended" | "offline";
+  // New schema - device object
+  device?: Device;
+  onView?: (id: string) => void;
+  onQuickAction?: (id: string, action: "set_threshold" | "mute" | "details") => void;
+  // Legacy props (still supported)
+  id?: string;
+  name?: string;
+  category?: string;
+  status?: "active" | "inactive" | "suspended" | "offline" | DeviceStatus;
   serialNumber?: string;
   lastValue?: number;
   unit?: string;
@@ -77,20 +84,57 @@ function formatLastSeen(date: Date | null | undefined): string {
 }
 
 export function DeviceCard({
-  id,
-  name,
-  category,
-  status,
-  serialNumber,
-  lastValue,
-  unit,
-  lastSeenAt,
+  device,
+  onView,
+  onQuickAction,
+  id: legacyId,
+  name: legacyName,
+  category: legacyCategory,
+  status: legacyStatus,
+  serialNumber: legacySerial,
+  lastValue: legacyValue,
+  unit: legacyUnit,
+  lastSeenAt: legacyLastSeen,
   className,
 }: DeviceCardProps) {
-  const Icon = categoryIcons[category] || Factory;
-  const colors = categoryColors[category] || categoryColors.other;
-  const statusCfg = statusConfig[status] || statusConfig.inactive;
-  const isOnline = status === "active";
+  // Support both new device object and legacy props
+  const id = device?.id || legacyId || "";
+  const name = device?.name || legacyName || "Unknown Device";
+  const category = device?.type || legacyCategory || "other";
+  const status = device?.status || legacyStatus || "offline";
+  const serialNumber = legacySerial;
+  const lastValue = device?.value ?? legacyValue;
+  const unit = device?.unit || legacyUnit;
+  const lastSeenAt = device?.lastUpdated ? new Date(device.lastUpdated) : legacyLastSeen;
+  const isLive = device?.live ?? false;
+  const signalStrength = device?.signalStrength;
+  const battery = device?.battery;
+
+  // Map device types to categories
+  const categoryMap: Record<string, string> = {
+    water_level: "water",
+    power_meter: "power",
+    temperature: "environment",
+    other: "other",
+  };
+  const mappedCategory = categoryMap[category] || category;
+
+  const Icon = categoryIcons[mappedCategory] || Factory;
+  const colors = categoryColors[mappedCategory] || categoryColors.other;
+  
+  // Map new status values to config
+  const statusMap: Record<string, keyof typeof statusConfig> = {
+    ok: "active",
+    warn: "active",
+    critical: "active",
+    offline: "offline",
+    active: "active",
+    inactive: "inactive",
+    suspended: "suspended",
+  };
+  const mappedStatus = statusMap[status] || "inactive";
+  const statusCfg = statusConfig[mappedStatus];
+  const isOnline = mappedStatus === "active";
 
   return (
     <Link

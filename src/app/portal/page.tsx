@@ -12,7 +12,12 @@ import { SystemHealthBar } from "@/components/dashboard/SystemHealthBar";
 import { AIInsightsWidget } from "@/components/dashboard/AIInsightsWidget";
 import { AlertsPanel } from "@/components/dashboard/AlertsPanel";
 import { DeviceCard } from "@/components/dashboard/DeviceCard";
-import { TrendChart } from "@/components/dashboard/TrendChart";
+import { KpiCard } from "@/components/dashboard/KpiCard";
+import { PrimaryTrendCard } from "@/components/dashboard/PrimaryTrendCard";
+import { HealthGaugeCard } from "@/components/dashboard/HealthGaugeCard";
+import { EventsFeedCard } from "@/components/dashboard/EventsFeedCard";
+import { CtaPanelCard } from "@/components/dashboard/CtaPanelCard";
+import { ConnectivityCard } from "@/components/dashboard/ConnectivityCard";
 import { EmptyState } from "@/components/ui/empty-state";
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -103,6 +108,28 @@ export default async function TenantPortalPage() {
     label: `${i}:00`,
   }));
 
+  // Transform chart data for PrimaryTrendCard
+  const trendSeries = chartData.map(d => ({ t: d.label, v: d.value }));
+
+  // Sample KPI sparkline data
+  const waterSparkline = [65, 70, 68, 72, 75, 73, 78, 80];
+  const powerSparkline = [320, 340, 310, 350, 380, 360, 340, 350];
+
+  // Sample events for EventsFeedCard
+  const recentEvents = [
+    { id: "1", type: "reading" as const, label: "Water level updated", detail: "Tank A: 78%", severity: "neutral" as const, timestamp: new Date(Date.now() - 5 * 60000).toISOString() },
+    { id: "2", type: "alert" as const, label: "High power consumption", detail: "Peak load detected", severity: "warn" as const, timestamp: new Date(Date.now() - 15 * 60000).toISOString() },
+    { id: "3", type: "system" as const, label: "Device reconnected", detail: "FrostLink Coldroom", severity: "neutral" as const, timestamp: new Date(Date.now() - 30 * 60000).toISOString() },
+    { id: "4", type: "reading" as const, label: "Temperature reading", detail: "Coldroom: -18°C", severity: "neutral" as const, timestamp: new Date(Date.now() - 45 * 60000).toISOString() },
+  ];
+
+  // Calculate connectivity status
+  const weakSignalDevices = devices.filter(d => d.status === "active").length; // Placeholder
+  const connectivityStatus = weakSignalDevices === 0 ? "ok" : weakSignalDevices < 2 ? "warn" : "critical";
+
+  // Calculate refill risk (placeholder logic)
+  const refillRisk = Math.floor(Math.random() * 40) + 20;
+
   // AI Insights (in production, these would come from analysis)
   const aiInsights = [
     {
@@ -160,56 +187,42 @@ export default async function TenantPortalPage() {
           <p className="text-gray-500 mt-1">Here&apos;s an overview of your IoT devices</p>
         </div>
 
-        {/* Stats Cards */}
+        {/* KPI Cards Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Total Devices</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1 tabular-nums">{devicesTotal}</p>
-                <p className="text-xs text-emerald-600 mt-1">{devicesOnline} online</p>
-              </div>
-              <div className="p-3 bg-indigo-50 rounded-xl">
-                <Cpu className="h-6 w-6 text-indigo-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Subscriptions</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1 tabular-nums">{subscriptions.length}</p>
-                <p className="text-xs text-gray-400 mt-1">Active plans</p>
-              </div>
-              <div className="p-3 bg-emerald-50 rounded-xl">
-                <Zap className="h-6 w-6 text-emerald-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Open Alerts</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1 tabular-nums">{alerts.length}</p>
-                <p className="text-xs text-amber-600 mt-1">{alerts.filter(a => a.severity === "critical").length} critical</p>
-              </div>
-              <div className="p-3 bg-amber-50 rounded-xl">
-                <Bell className="h-6 w-6 text-amber-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Sites</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1 tabular-nums">{sites.length}</p>
-                <p className="text-xs text-gray-400 mt-1">Locations</p>
-              </div>
-              <div className="p-3 bg-purple-50 rounded-xl">
-                <Building2 className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-          </div>
+          <KpiCard
+            title="Water Used This Month"
+            value="12.4 m³"
+            subtitle="+8% vs last month"
+            status="neutral"
+            icon="water"
+            sparkline={waterSparkline}
+            href="/portal/reports?type=water"
+          />
+          <KpiCard
+            title="Power Used This Month"
+            value="350 kWh"
+            subtitle="-5% vs last month"
+            status="ok"
+            icon="power"
+            sparkline={powerSparkline}
+            href="/portal/reports?type=power"
+          />
+          <KpiCard
+            title="Devices Online"
+            value={`${devicesOnline}/${devicesTotal}`}
+            subtitle={devicesOnline === devicesTotal ? "All online" : `${devicesTotal - devicesOnline} offline`}
+            status={devicesOnline === devicesTotal ? "ok" : "warn"}
+            icon="devices"
+            href="/portal/devices"
+          />
+          <KpiCard
+            title="Alerts This Week"
+            value={alerts.length.toString()}
+            subtitle={alerts.filter(a => a.severity === "critical").length > 0 ? `${alerts.filter(a => a.severity === "critical").length} critical` : "No critical"}
+            status={alerts.filter(a => a.severity === "critical").length > 0 ? "critical" : alerts.length > 0 ? "warn" : "ok"}
+            icon="alerts"
+            href="/portal/alerts"
+          />
         </div>
       </div>
 
@@ -326,21 +339,60 @@ export default async function TenantPortalPage() {
         </div>
       )}
 
-      {/* Analytics Row: Trend Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TrendChart
-          title="Power Consumption"
-          data={chartData}
-          unit=" kWh"
-          color="#4f46e5"
-          trend={{ value: -5.2, label: "vs last week" }}
+      {/* Main Row: Primary Trend + Health Gauge + Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Primary Trend Card - 8 cols */}
+        <div className="lg:col-span-8">
+          <PrimaryTrendCard
+            title="Tank Level Trend"
+            range="7d"
+            series={trendSeries}
+            unit="%"
+            thresholds={{ low: 30, critical: 15 }}
+            summaryChips={[
+              { label: "Avg", value: "68%", tone: "neutral" },
+              { label: "Min", value: "45%", tone: "warn" },
+              { label: "Max", value: "92%", tone: "good" },
+            ]}
+            aiMarkers={[
+              { t: "14:00", label: "Unusual drop detected", severity: "warn" },
+            ]}
+          />
+        </div>
+
+        {/* Right Column: Health Gauge + Alerts Summary - 4 cols */}
+        <div className="lg:col-span-4 space-y-4">
+          <HealthGaugeCard
+            title="Refill Risk"
+            value={refillRisk}
+            caption="Based on current usage patterns"
+            deltaText={refillRisk > 50 ? "34% higher than last week" : "12% lower than last week"}
+            status={refillRisk > 70 ? "critical" : refillRisk > 40 ? "warn" : "ok"}
+          />
+          <AlertsPanel alerts={formattedAlerts} maxItems={3} />
+        </div>
+      </div>
+
+      {/* Bottom Row: CTA + Events Feed + Connectivity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* CTA Panel */}
+        <CtaPanelCard
+          title="Connect a New Device"
+          description="Add more IoT devices to expand your monitoring capabilities."
+          primaryAction={{ label: "Add Device", href: "/" }}
+          secondaryAction={{ label: "View Catalog", href: "/" }}
+          illustration="device"
         />
-        <TrendChart
-          title="Water Level"
-          data={chartData.map(d => ({ ...d, value: Math.floor(Math.random() * 30) + 50 }))}
-          unit="%"
-          color="#0891b2"
-          trend={{ value: 2.1, label: "vs last week" }}
+
+        {/* Events Feed */}
+        <EventsFeedCard items={recentEvents} />
+
+        {/* Connectivity Card */}
+        <ConnectivityCard
+          title="Connectivity Check"
+          message={weakSignalDevices === 0 ? "All devices have strong signal" : `${weakSignalDevices} device(s) may have weak signal`}
+          action={{ label: "View Details", href: "/portal/devices" }}
+          status={connectivityStatus as "ok" | "warn" | "critical"}
         />
       </div>
     </div>
