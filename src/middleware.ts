@@ -1,13 +1,21 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default auth((req) => {
+export async function middleware(req: NextRequest) {
   const { nextUrl } = req;
-  const isLoggedIn = !!req.auth;
-  const userType = req.auth?.user?.userType;
+  
+  // Get token without importing full auth library
+  const token = await getToken({ 
+    req, 
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET 
+  });
+  
+  const isLoggedIn = !!token;
+  const userType = token?.userType as string | undefined;
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/products"];
+  const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/products", "/order", "/icon.svg"];
   const isPublicRoute = publicRoutes.some(route => 
     nextUrl.pathname === route || nextUrl.pathname.startsWith("/products/")
   );
@@ -26,8 +34,24 @@ export default auth((req) => {
   // Tenant portal routes
   const isPortalRoute = nextUrl.pathname.startsWith("/portal");
 
+  // Dashboard routes
+  const isDashboardRoute = nextUrl.pathname.startsWith("/dashboard");
+
+  // Invite routes
+  const isInviteRoute = nextUrl.pathname.startsWith("/invite");
+
   // If it's an API route, let it through (API has its own auth)
   if (isApiRoute) {
+    return NextResponse.next();
+  }
+
+  // Invite routes are public
+  if (isInviteRoute) {
+    return NextResponse.next();
+  }
+
+  // Dashboard routes are public (device dashboards)
+  if (isDashboardRoute) {
     return NextResponse.next();
   }
 
@@ -38,7 +62,6 @@ export default auth((req) => {
     } else if (userType === "tenant") {
       return NextResponse.redirect(new URL("/portal", nextUrl));
     }
-    // If userType is undefined/invalid, let them stay on login to re-authenticate
     return NextResponse.next();
   }
 
@@ -55,34 +78,27 @@ export default auth((req) => {
     if (isPortalRoute) {
       return NextResponse.redirect(new URL("/login", nextUrl));
     }
-    // For any other protected route
     return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
   // User is logged in - check they're accessing the correct portal
-  if (isAdminRoute) {
-    if (userType !== "admin") {
-      // Non-admin trying to access admin - redirect to portal if tenant, else login
-      if (userType === "tenant") {
-        return NextResponse.redirect(new URL("/portal", nextUrl));
-      }
-      return NextResponse.redirect(new URL("/login?type=admin", nextUrl));
+  if (isAdminRoute && userType !== "admin") {
+    if (userType === "tenant") {
+      return NextResponse.redirect(new URL("/portal", nextUrl));
     }
+    return NextResponse.redirect(new URL("/login?type=admin", nextUrl));
   }
 
-  if (isPortalRoute) {
-    if (userType !== "tenant") {
-      // Non-tenant trying to access portal - redirect to admin if admin, else login
-      if (userType === "admin") {
-        return NextResponse.redirect(new URL("/admin", nextUrl));
-      }
-      return NextResponse.redirect(new URL("/login", nextUrl));
+  if (isPortalRoute && userType !== "tenant") {
+    if (userType === "admin") {
+      return NextResponse.redirect(new URL("/admin", nextUrl));
     }
+    return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|.*\\..*).*)"],
 };
