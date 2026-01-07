@@ -1,11 +1,18 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default auth((req) => {
-  const { nextUrl } = req;
+export async function middleware(request: NextRequest) {
+  // Use getToken for Edge-compatible JWT verification
+  const token = await getToken({ 
+    req: request,
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  });
   
-  const isLoggedIn = !!req.auth;
-  const userType = req.auth?.user?.userType;
+  const { nextUrl } = request;
+  
+  const isLoggedIn = !!token;
+  const userType = token?.userType as string | undefined;
 
   // Public routes that don't require authentication
   const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/products", "/order", "/icon.svg"];
@@ -90,7 +97,7 @@ export default auth((req) => {
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|.*\\..*).*)"],
