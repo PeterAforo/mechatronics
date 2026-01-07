@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Activity, Wifi, Server, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,19 @@ export function SystemHealthBar({
   lastSync,
   className,
 }: SystemHealthBarProps) {
+  const [formattedTime, setFormattedTime] = useState<string | null>(null);
+
+  // Format time on client-side only to avoid hydration mismatch
+  useEffect(() => {
+    if (lastSync) {
+      const hours = new Date(lastSync).getHours();
+      const minutes = new Date(lastSync).getMinutes();
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const hour12 = hours % 12 || 12;
+      setFormattedTime(`${hour12}:${minutes.toString().padStart(2, "0")} ${ampm}`);
+    }
+  }, [lastSync]);
+
   const healthPercent = devicesTotal > 0 ? (devicesOnline / devicesTotal) * 100 : 100;
   const healthStatus = healthPercent >= 90 ? "healthy" : healthPercent >= 70 ? "warning" : "critical";
 
@@ -104,7 +118,7 @@ export function SystemHealthBar({
             <span className="text-sm text-gray-500">
               Last sync:{" "}
               <span className="text-gray-700">
-                {new Date(lastSync).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                {formattedTime || "--:--"}
               </span>
             </span>
           </div>
