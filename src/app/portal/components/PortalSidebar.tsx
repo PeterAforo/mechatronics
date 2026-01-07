@@ -7,6 +7,7 @@ import {
   Settings, HelpCircle, FileText, Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/Logo";
 
 const menuItems = [
   { 
@@ -74,14 +75,7 @@ export default function PortalSidebar() {
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-gray-200 flex flex-col">
       {/* Logo */}
       <div className="h-16 flex items-center px-6 border-b border-gray-100">
-        <Link href="/portal" className="flex items-center gap-2">
-          <div className="flex gap-1">
-            <div className="w-2 h-6 bg-[#f74780] rounded-sm" />
-            <div className="w-2 h-6 bg-[#3b82f6] rounded-sm" />
-            <div className="w-2 h-6 bg-[#10b981] rounded-sm" />
-          </div>
-          <span className="text-lg font-bold text-gray-900">MECHATRONICS</span>
-        </Link>
+        <Logo href="/portal" size="md" />
       </div>
 
       {/* Main Navigation */}

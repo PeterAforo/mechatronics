@@ -15,8 +15,14 @@ const rubik = Rubik({
 });
 
 export const metadata: Metadata = {
-  title: "Mechatronics - Smart Home Automation",
-  description: "Smart Automotive Electronic Boards for Home Automation",
+  title: "Mechatronics - IoT Monitoring Platform",
+  description: "Smart IoT monitoring solutions for water, power, and environmental systems",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
