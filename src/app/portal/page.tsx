@@ -6,9 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Droplets, Zap, Thermometer, Factory, Heart, Shield,
-  Plus, Settings, Bell, Building2, MapPin, ChevronRight
+  Plus, Bell, Building2, ChevronRight, Activity, Cpu
 } from "lucide-react";
-import { LogoutButton } from "@/components/auth/logout-button";
+import { SystemHealthBar } from "@/components/dashboard/SystemHealthBar";
+import { AIInsightsWidget } from "@/components/dashboard/AIInsightsWidget";
+import { AlertsPanel } from "@/components/dashboard/AlertsPanel";
+import { DeviceCard } from "@/components/dashboard/DeviceCard";
+import { TrendChart } from "@/components/dashboard/TrendChart";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   water: Droplets,
@@ -38,7 +43,7 @@ export default async function TenantPortalPage() {
 
   // Get tenant's devices with inventory and subscription info
   const devices = tenantId ? await prisma.tenantDevice.findMany({
-    where: { tenantId, status: "active" },
+    where: { tenantId },
     include: {
       inventory: {
         include: {
@@ -80,77 +85,142 @@ export default async function TenantPortalPage() {
     orderBy: { siteName: "asc" },
   }) : [];
 
-  // Get recent alerts
+  // Get all alerts (open)
   const alerts = tenantId ? await prisma.alert.findMany({
     where: { tenantId, status: "open" },
     orderBy: { createdAt: "desc" },
-    take: 5,
   }) : [];
 
+  // Calculate stats
+  const activeDevices = devices.filter(d => d.status === "active");
+  const devicesOnline = activeDevices.length;
+  const devicesTotal = devices.length;
+
+  // Generate sample chart data (in production, this would come from telemetry)
+  const chartData = Array.from({ length: 24 }, (_, i) => ({
+    timestamp: new Date(Date.now() - (23 - i) * 3600000).toISOString(),
+    value: Math.floor(Math.random() * 40) + 60,
+    label: `${i}:00`,
+  }));
+
+  // AI Insights (in production, these would come from analysis)
+  const aiInsights = [
+    {
+      id: "1",
+      type: "optimization" as const,
+      title: "Energy Usage Pattern Detected",
+      description: "Your power consumption peaks between 6-8 PM. Consider scheduling high-power appliances during off-peak hours to reduce costs.",
+      link: "/portal/reports",
+      linkText: "View energy report",
+      priority: "medium" as const,
+    },
+    {
+      id: "2",
+      type: "prediction" as const,
+      title: "Water Tank Refill Predicted",
+      description: "Based on current usage patterns, your water tank will need refilling in approximately 3 days.",
+      link: "/portal/devices",
+      linkText: "Check water levels",
+      priority: "low" as const,
+    },
+  ];
+
+  // Format alerts for AlertsPanel
+  const formattedAlerts = alerts.slice(0, 5).map(alert => ({
+    id: alert.id.toString(),
+    title: alert.title,
+    severity: alert.severity as "info" | "warning" | "critical",
+    createdAt: alert.createdAt,
+    deviceName: undefined,
+  }));
+
   return (
-    <div className="p-6">
-      {/* Welcome */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Welcome back, {session.user.name || "User"}
-        </h1>
-        <p className="text-gray-500 mt-1">Here&apos;s an overview of your IoT devices</p>
+    <div className="p-6 space-y-6">
+      {/* Top Strip: SystemHealthBar + AIInsightsWidget */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-7">
+          <SystemHealthBar
+            devicesOnline={devicesOnline}
+            devicesTotal={devicesTotal}
+            alertsOpen={alerts.length}
+            lastSync={new Date()}
+          />
+        </div>
+        <div className="lg:col-span-5">
+          <AIInsightsWidget insights={aiInsights} />
+        </div>
       </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-5 border border-gray-200">
+      {/* Welcome + Stats Row */}
+      <div>
+        <div className="mb-4">
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Welcome back, {session.user.name || "User"}
+          </h1>
+          <p className="text-gray-500 mt-1">Here&apos;s an overview of your IoT devices</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Devices</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{devices.length}</p>
+                <p className="text-sm text-gray-500 font-medium">Total Devices</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1 tabular-nums">{devicesTotal}</p>
+                <p className="text-xs text-emerald-600 mt-1">{devicesOnline} online</p>
               </div>
-              <div className="p-2.5 bg-blue-50 rounded-lg">
-                <Factory className="h-5 w-5 text-blue-600" />
+              <div className="p-3 bg-indigo-50 rounded-xl">
+                <Cpu className="h-6 w-6 text-indigo-600" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-5 border border-gray-200">
+          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Subscriptions</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{subscriptions.length}</p>
+                <p className="text-sm text-gray-500 font-medium">Subscriptions</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1 tabular-nums">{subscriptions.length}</p>
+                <p className="text-xs text-gray-400 mt-1">Active plans</p>
               </div>
-              <div className="p-2.5 bg-green-50 rounded-lg">
-                <Zap className="h-5 w-5 text-green-600" />
+              <div className="p-3 bg-emerald-50 rounded-xl">
+                <Zap className="h-6 w-6 text-emerald-600" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-5 border border-gray-200">
+          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Pending Orders</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{pendingOrders.length}</p>
+                <p className="text-sm text-gray-500 font-medium">Open Alerts</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1 tabular-nums">{alerts.length}</p>
+                <p className="text-xs text-amber-600 mt-1">{alerts.filter(a => a.severity === "critical").length} critical</p>
               </div>
-              <div className="p-2.5 bg-amber-50 rounded-lg">
-                <Bell className="h-5 w-5 text-amber-600" />
+              <div className="p-3 bg-amber-50 rounded-xl">
+                <Bell className="h-6 w-6 text-amber-600" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-5 border border-gray-200">
+          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Sites</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{sites.length}</p>
+                <p className="text-sm text-gray-500 font-medium">Sites</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1 tabular-nums">{sites.length}</p>
+                <p className="text-xs text-gray-400 mt-1">Locations</p>
               </div>
-              <div className="p-2.5 bg-purple-50 rounded-lg">
-                <Building2 className="h-5 w-5 text-purple-600" />
+              <div className="p-3 bg-purple-50 rounded-xl">
+                <Building2 className="h-6 w-6 text-purple-600" />
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Devices */}
-        <div className="mb-8">
+      {/* Main Content: Devices Grid + Alerts Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Devices Grid - 8 cols */}
+        <div className="lg:col-span-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Your Devices</h2>
             <Link href="/">
-              <Button size="sm" className="bg-[#f74780] hover:bg-[#e03a6f] text-white">
+              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
                 <Plus className="h-4 w-4 mr-1.5" />
                 Add Device
               </Button>
@@ -158,54 +228,27 @@ export default async function TenantPortalPage() {
           </div>
 
           {devices.length > 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-              {devices.map((device) => {
-                const Icon = device.inventory?.deviceType?.category 
-                  ? categoryIcons[device.inventory.deviceType.category] || Factory
-                  : Factory;
-                return (
-                  <Link 
-                    key={device.id.toString()} 
-                    href={`/portal/devices/${device.id}`}
-                    className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="p-2.5 bg-gray-100 rounded-lg">
-                        <Icon className="h-5 w-5 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {device.nickname || device.subscription?.product?.name || `Device ${device.id}`}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {device.inventory?.serialNumber || "No serial"} • {device.inventory?.deviceType?.name || "Unknown type"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge 
-                        variant="outline" 
-                        className={device.status === "active" 
-                          ? "border-green-200 bg-green-50 text-green-700" 
-                          : "border-gray-200 bg-gray-50 text-gray-600"
-                        }
-                      >
-                        {device.status}
-                      </Badge>
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
-                    </div>
-                  </Link>
-                );
-              })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {devices.slice(0, 6).map((device) => (
+                <DeviceCard
+                  key={device.id.toString()}
+                  id={device.id.toString()}
+                  name={device.nickname || device.subscription?.product?.name || `Device ${device.id}`}
+                  category={device.inventory?.deviceType?.category || "other"}
+                  status={device.status as "active" | "inactive" | "suspended"}
+                  serialNumber={device.inventory?.serialNumber || undefined}
+                  lastSeenAt={device.lastSeenAt}
+                />
+              ))}
             </div>
           ) : subscriptions.length > 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-amber-50 rounded-lg">
-                  <Bell className="h-5 w-5 text-amber-600" />
+                <div className="p-2.5 bg-amber-50 rounded-xl">
+                  <Activity className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Subscriptions Active - Devices Pending</p>
+                  <p className="font-semibold text-gray-900">Subscriptions Active - Devices Pending</p>
                   <p className="text-sm text-gray-500">Your devices are being prepared for installation</p>
                 </div>
               </div>
@@ -218,7 +261,7 @@ export default async function TenantPortalPage() {
                         {sub.currency} {Number(sub.monthlyFee).toFixed(2)}/month
                       </p>
                     </div>
-                    <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                    <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
                       Active
                     </Badge>
                   </div>
@@ -226,99 +269,80 @@ export default async function TenantPortalPage() {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl mb-4">
-                <Factory className="h-6 w-6 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">No devices yet</h3>
-              <p className="text-gray-500 mb-4">Get started by adding your first IoT device</p>
-              <Link href="/">
-                <Button className="bg-[#f74780] hover:bg-[#e03a6f] text-white">
-                  Browse Products
+            <EmptyState
+              icon={Cpu}
+              title="No devices yet"
+              description="Get started by adding your first IoT device to monitor your water, power, or temperature."
+              action={{ label: "Browse Products", href: "/" }}
+            />
+          )}
+
+          {devices.length > 6 && (
+            <div className="mt-4 text-center">
+              <Link href="/portal/devices">
+                <Button variant="outline" className="text-gray-600">
+                  View all {devices.length} devices
+                  <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </Link>
             </div>
           )}
         </div>
 
-        {/* Pending Orders */}
-        {pendingOrders.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Orders</h2>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-amber-800 font-medium mb-3">Awaiting Payment Confirmation</p>
-              <div className="space-y-3">
-                {pendingOrders.map((order) => (
-                  <div key={order.id.toString()} className="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-100">
-                    <div>
-                      <p className="font-medium text-gray-900">{order.orderRef}</p>
-                      <p className="text-sm text-gray-500">
-                        {order.items.map(item => item.product.name).join(", ")}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">{order.currency} {Number(order.total).toFixed(2)}</p>
-                      <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
-                        Pending
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-amber-700 mt-3">
-                Please complete your payment. Your subscription will be activated once payment is confirmed.
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Alerts Panel - 4 cols */}
+        <div className="lg:col-span-4">
+          <AlertsPanel alerts={formattedAlerts} maxItems={5} />
+        </div>
+      </div>
 
-        {/* Alerts */}
-        {alerts.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Alerts</h2>
-              <Link href="/portal/alerts">
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                  View all
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-              {alerts.map((alert: { id: bigint; title: string; severity: string; createdAt: Date }) => (
-                <div key={alert.id.toString()} className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      alert.severity === "critical" ? "bg-red-50" :
-                      alert.severity === "warning" ? "bg-yellow-50" : "bg-blue-50"
-                    }`}>
-                      <Bell className={`h-4 w-4 ${
-                        alert.severity === "critical" ? "text-red-600" :
-                        alert.severity === "warning" ? "text-yellow-600" : "text-blue-600"
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{alert.title}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(alert.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge 
-                    variant="outline"
-                    className={
-                      alert.severity === "critical" ? "border-red-200 bg-red-50 text-red-700" :
-                      alert.severity === "warning" ? "border-yellow-200 bg-yellow-50 text-yellow-700" :
-                      "border-blue-200 bg-blue-50 text-blue-700"
-                    }
-                  >
-                    {alert.severity}
+      {/* Pending Orders */}
+      {pendingOrders.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Bell className="h-5 w-5 text-amber-600" />
+            <h3 className="font-semibold text-amber-900">Pending Orders - Awaiting Payment</h3>
+          </div>
+          <div className="space-y-3">
+            {pendingOrders.map((order) => (
+              <div key={order.id.toString()} className="flex items-center justify-between p-4 bg-white rounded-lg border border-amber-100">
+                <div>
+                  <p className="font-medium text-gray-900">{order.orderRef}</p>
+                  <p className="text-sm text-gray-500">
+                    {order.items.map(item => item.product.name).join(", ")}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-gray-900">{order.currency} {Number(order.total).toFixed(2)}</p>
+                  <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 mt-1">
+                    Pending
                   </Badge>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        )}
+          <p className="text-sm text-amber-700 mt-3">
+            Complete your payment to activate your subscription and devices.
+          </p>
+        </div>
+      )}
+
+      {/* Analytics Row: Trend Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TrendChart
+          title="Power Consumption"
+          data={chartData}
+          unit=" kWh"
+          color="#4f46e5"
+          trend={{ value: -5.2, label: "vs last week" }}
+        />
+        <TrendChart
+          title="Water Level"
+          data={chartData.map(d => ({ ...d, value: Math.floor(Math.random() * 30) + 50 }))}
+          unit="%"
+          color="#0891b2"
+          trend={{ value: 2.1, label: "vs last week" }}
+        />
+      </div>
     </div>
   );
 }
