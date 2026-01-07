@@ -129,7 +129,7 @@ async function handleChargeSuccess(data: {
                   tenantId: order.tenantId,
                   inventoryId: inventory.id,
                   subscriptionId: subscription.id,
-                  deviceName: `${product.name} #${i + 1}`,
+                  nickname: `${product.name} #${i + 1}`,
                   status: "active",
                 },
               });
