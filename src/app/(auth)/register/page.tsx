@@ -175,7 +175,7 @@ function RegisterForm() {
             <CardFooter className="flex flex-col gap-4">
               <Button
                 type="submit"
-                className="w-full bg-[#f74780] hover:bg-[#e03a6f]"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 transition-colors"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -189,7 +189,7 @@ function RegisterForm() {
               </Button>
               <div className="text-center text-sm text-gray-500">
                 Already have an account?{" "}
-                <Link href="/login" className="text-[#f74780] hover:text-[#e03a6f] transition-colors font-medium">
+                <Link href="/login" className="text-indigo-600 hover:text-indigo-700 transition-colors font-medium">
                   Sign in
                 </Link>
               </div>

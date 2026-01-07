@@ -111,11 +111,11 @@ export default function PortalSidebar() {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                     active
-                      ? "bg-[#f74780]/10 text-[#f74780]"
+                      ? "bg-indigo-50 text-indigo-600"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   )}
                 >
-                  <Icon className={cn("h-5 w-5", active ? "text-[#f74780]" : "text-gray-400")} />
+                  <Icon className={cn("h-5 w-5", active ? "text-indigo-600" : "text-gray-400")} />
                   {item.label}
                 </Link>
               </li>
@@ -137,11 +137,11 @@ export default function PortalSidebar() {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                     active
-                      ? "bg-[#f74780]/10 text-[#f74780]"
+                      ? "bg-indigo-50 text-indigo-600"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   )}
                 >
-                  <Icon className={cn("h-5 w-5", active ? "text-[#f74780]" : "text-gray-400")} />
+                  <Icon className={cn("h-5 w-5", active ? "text-indigo-600" : "text-gray-400")} />
                   {item.label}
                 </Link>
               </li>

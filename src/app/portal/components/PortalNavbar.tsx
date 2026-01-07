@@ -72,7 +72,7 @@ export default function PortalNavbar({
               <Button variant="ghost" size="icon" className="relative">
                 <MessageSquare className="h-5 w-5 text-gray-500" />
                 {messageCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-[#f74780] text-white text-xs">
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-indigo-600 text-white text-xs">
                     {messageCount > 9 ? "9+" : messageCount}
                   </Badge>
                 )}
@@ -86,7 +86,7 @@ export default function PortalNavbar({
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/portal/messages" className="w-full text-center text-[#f74780]">
+                <Link href="/portal/messages" className="w-full text-center text-indigo-600">
                   View all messages
                 </Link>
               </DropdownMenuItem>
@@ -113,7 +113,7 @@ export default function PortalNavbar({
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/portal/notifications" className="w-full text-center text-[#f74780]">
+                <Link href="/portal/notifications" className="w-full text-center text-indigo-600">
                   View all notifications
                 </Link>
               </DropdownMenuItem>
@@ -127,7 +127,7 @@ export default function PortalNavbar({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 px-2">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#f74780] to-[#ff6b9d] flex items-center justify-center text-white font-medium text-sm">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-600 to-blue-500 flex items-center justify-center text-white font-medium text-sm">
                   {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
                 </div>
                 <div className="hidden md:block text-left">

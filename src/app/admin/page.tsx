@@ -99,9 +99,9 @@ export default async function AdminPortalPage() {
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href="/admin/products/new" className="bg-white rounded-xl p-4 border border-gray-200 hover:border-[#f74780] hover:bg-pink-50/30 transition-colors flex items-center gap-3">
-              <div className="p-2.5 bg-[#f74780]/10 rounded-lg">
-                <Plus className="h-5 w-5 text-[#f74780]" />
+            <Link href="/admin/products/new" className="bg-white rounded-xl p-4 border border-gray-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors flex items-center gap-3">
+              <div className="p-2.5 bg-indigo-50 rounded-lg">
+                <Plus className="h-5 w-5 text-indigo-600" />
               </div>
               <div>
                 <p className="font-medium text-gray-900">Add Product</p>

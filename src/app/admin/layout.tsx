@@ -45,7 +45,7 @@ export default async function AdminLayout({
           {/* Logo */}
           <div className="h-16 flex items-center px-6 border-b border-gray-200">
             <Link href="/admin" className="flex items-center gap-2">
-              <span className="text-xl font-bold text-[#f74780]">MECHATRONICS</span>
+              <span className="text-xl font-bold text-indigo-600">MECHATRONICS</span>
             </Link>
           </div>
 

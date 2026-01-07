@@ -33,13 +33,13 @@ const categoryIcons: Record<string, React.ElementType> = {
 };
 
 const categoryColors: Record<string, { bg: string; text: string; gradient: string }> = {
-  water: { bg: "bg-cyan-500/20", text: "text-cyan-500", gradient: "from-cyan-900/20 to-slate-900" },
-  power: { bg: "bg-yellow-500/20", text: "text-yellow-500", gradient: "from-yellow-900/20 to-slate-900" },
-  environment: { bg: "bg-blue-500/20", text: "text-blue-500", gradient: "from-blue-900/20 to-slate-900" },
-  security: { bg: "bg-red-500/20", text: "text-red-500", gradient: "from-red-900/20 to-slate-900" },
-  industrial: { bg: "bg-orange-500/20", text: "text-orange-500", gradient: "from-orange-900/20 to-slate-900" },
-  healthcare: { bg: "bg-pink-500/20", text: "text-pink-500", gradient: "from-pink-900/20 to-slate-900" },
-  other: { bg: "bg-gray-500/20", text: "text-gray-500", gradient: "from-gray-900/20 to-slate-900" },
+  water: { bg: "bg-cyan-50", text: "text-cyan-600", gradient: "from-cyan-50 to-white" },
+  power: { bg: "bg-amber-50", text: "text-amber-600", gradient: "from-amber-50 to-white" },
+  environment: { bg: "bg-blue-50", text: "text-blue-600", gradient: "from-blue-50 to-white" },
+  security: { bg: "bg-red-50", text: "text-red-600", gradient: "from-red-50 to-white" },
+  industrial: { bg: "bg-orange-50", text: "text-orange-600", gradient: "from-orange-50 to-white" },
+  healthcare: { bg: "bg-pink-50", text: "text-pink-600", gradient: "from-pink-50 to-white" },
+  other: { bg: "bg-gray-50", text: "text-gray-600", gradient: "from-gray-50 to-white" },
 };
 
 export default async function Home() {
@@ -68,17 +68,17 @@ export default async function Home() {
             </Link>
             
             <nav className="hidden lg:flex items-center gap-8">
-              <Link href="#products" className="text-gray-700 hover:text-[#f74780] font-medium">Products</Link>
-              <Link href="#features" className="text-gray-700 hover:text-[#f74780] font-medium">Features</Link>
-              <Link href="#how-it-works" className="text-gray-700 hover:text-[#f74780] font-medium">How It Works</Link>
+              <Link href="#products" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Products</Link>
+              <Link href="#features" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Features</Link>
+              <Link href="#how-it-works" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">How It Works</Link>
             </nav>
 
             <div className="flex items-center gap-4">
-              <Link href="/login" className="text-gray-700 hover:text-[#f74780] font-medium hidden sm:block">
+              <Link href="/login" className="text-gray-700 hover:text-indigo-600 font-medium hidden sm:block transition-colors">
                 Sign in
               </Link>
               <Link href="/register">
-                <Button className="bg-[#f74780] hover:bg-[#e03a6f] text-white rounded-lg px-6">
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-6 transition-colors">
                   Get Started
                 </Button>
               </Link>
@@ -88,7 +88,7 @@ export default async function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 bg-gradient-to-br from-[#6a3093] via-[#a044ff] to-[#6a3093] relative overflow-hidden">
+      <section className="pt-32 pb-20 bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-600 relative overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center text-white">
             <Badge className="mb-6 bg-white/20 text-white border-white/30 text-sm px-4 py-1">
@@ -96,7 +96,7 @@ export default async function Home() {
             </Badge>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
               Smart Monitoring for<br />
-              <span className="text-[#f74780]">Water, Power & Temperature</span>
+              <span className="text-cyan-300">Water, Power & Temperature</span>
             </h1>
             <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto">
               Professional IoT devices that monitor your water tanks, power consumption, and coldroom temperatures. 
@@ -104,7 +104,7 @@ export default async function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="#products">
-                <Button size="lg" className="bg-[#f74780] hover:bg-[#e03a6f] text-white rounded-lg px-8 py-6 text-lg">
+                <Button size="lg" className="bg-white text-indigo-600 hover:bg-gray-100 rounded-lg px-8 py-6 text-lg font-semibold transition-colors">
                   Browse Products
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -154,8 +154,8 @@ export default async function Home() {
             ].map((feature, idx) => (
               <div key={idx} className="text-center group">
                 <div className="relative inline-flex items-center justify-center mb-6">
-                  <div className="absolute w-20 h-20 bg-[#f74780]/10 rounded-full transform group-hover:scale-110 transition-transform"></div>
-                  <feature.icon className="h-12 w-12 text-[#f74780] relative z-10" />
+                  <div className="absolute w-20 h-20 bg-indigo-100 rounded-full transform group-hover:scale-110 transition-transform"></div>
+                  <feature.icon className="h-12 w-12 text-indigo-600 relative z-10" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
                 <p className="text-gray-500">{feature.desc}</p>
@@ -209,7 +209,7 @@ export default async function Home() {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-gray-500">Monthly</span>
-                          <span className="text-[#f74780] font-semibold">
+                          <span className="text-indigo-600 font-semibold">
                             {product.currency} {Number(product.monthlyFee).toFixed(2)}/mo
                           </span>
                         </div>
@@ -217,7 +217,7 @@ export default async function Home() {
                     </CardContent>
                     <CardFooter className="pt-0">
                       <Link href={`/products/${product.productCode}`} className="w-full">
-                        <Button className="w-full bg-[#f74780] hover:bg-[#e03a6f]">
+                        <Button className="w-full bg-indigo-600 hover:bg-indigo-700 transition-colors">
                           View Details
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
@@ -237,7 +237,7 @@ export default async function Home() {
                 Our product catalog is being prepared. Register now to be notified when products are available.
               </p>
               <Link href="/register">
-                <Button className="bg-[#f74780] hover:bg-[#e03a6f]">
+                <Button className="bg-indigo-600 hover:bg-indigo-700 transition-colors">
                   Get Notified
                 </Button>
               </Link>
@@ -265,7 +265,7 @@ export default async function Home() {
               { step: "3", title: "Monitor & Get Alerts", desc: "Access your dashboard and receive real-time alerts on your phone" },
             ].map((item, idx) => (
               <div key={idx} className="text-center">
-                <div className="w-16 h-16 bg-[#f74780] text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">
+                <div className="w-16 h-16 bg-indigo-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">
                   {item.step}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
@@ -294,8 +294,8 @@ export default async function Home() {
             ].map((item, idx) => (
               <Card key={idx} className="bg-white border-gray-200 hover:shadow-lg transition-shadow">
                 <CardContent className="p-6 text-center">
-                  <div className="w-14 h-14 bg-[#f74780]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <item.icon className="h-7 w-7 text-[#f74780]" />
+                  <div className="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <item.icon className="h-7 w-7 text-indigo-600" />
                   </div>
                   <h4 className="text-lg font-bold text-gray-900 mb-2">{item.title}</h4>
                   <p className="text-gray-500 text-sm">{item.desc}</p>
@@ -309,7 +309,7 @@ export default async function Home() {
       {/* CTA Banner */}
       <section className="py-24">
         <div className="container mx-auto px-4">
-          <div className="bg-gradient-to-br from-[#6a3093] via-[#a044ff] to-[#6a3093] rounded-2xl p-12 md:p-16 text-center relative overflow-hidden">
+          <div className="bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-600 rounded-2xl p-12 md:p-16 text-center relative overflow-hidden">
             <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
                 Ready to Start Monitoring?
@@ -319,7 +319,7 @@ export default async function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/register">
-                  <Button size="lg" className="bg-[#f74780] hover:bg-[#e03a6f] text-white rounded-lg px-8 py-6 text-lg">
+                  <Button size="lg" className="bg-white text-indigo-600 hover:bg-gray-100 rounded-lg px-8 py-6 text-lg font-semibold transition-colors">
                     Create Free Account
                   </Button>
                 </Link>
@@ -360,10 +360,10 @@ export default async function Home() {
             <div>
               <h6 className="font-bold text-gray-900 mb-4">Products</h6>
               <ul className="space-y-3">
-                <li><Link href="#products" className="text-gray-500 hover:text-[#f74780]">Water Monitors</Link></li>
-                <li><Link href="#products" className="text-gray-500 hover:text-[#f74780]">Power Monitors</Link></li>
-                <li><Link href="#products" className="text-gray-500 hover:text-[#f74780]">Temperature Monitors</Link></li>
-                <li><Link href="#products" className="text-gray-500 hover:text-[#f74780]">All Products</Link></li>
+                <li><Link href="#products" className="text-gray-500 hover:text-indigo-600">Water Monitors</Link></li>
+                <li><Link href="#products" className="text-gray-500 hover:text-indigo-600">Power Monitors</Link></li>
+                <li><Link href="#products" className="text-gray-500 hover:text-indigo-600">Temperature Monitors</Link></li>
+                <li><Link href="#products" className="text-gray-500 hover:text-indigo-600">All Products</Link></li>
               </ul>
             </div>
 
@@ -371,10 +371,10 @@ export default async function Home() {
             <div>
               <h6 className="font-bold text-gray-900 mb-4">Support</h6>
               <ul className="space-y-3">
-                <li><Link href="/login" className="text-gray-500 hover:text-[#f74780]">Customer Portal</Link></li>
-                <li><Link href="#how-it-works" className="text-gray-500 hover:text-[#f74780]">How It Works</Link></li>
-                <li><Link href="#" className="text-gray-500 hover:text-[#f74780]">Contact Us</Link></li>
-                <li><Link href="#" className="text-gray-500 hover:text-[#f74780]">FAQs</Link></li>
+                <li><Link href="/login" className="text-gray-500 hover:text-indigo-600">Customer Portal</Link></li>
+                <li><Link href="#how-it-works" className="text-gray-500 hover:text-indigo-600">How It Works</Link></li>
+                <li><Link href="#" className="text-gray-500 hover:text-indigo-600">Contact Us</Link></li>
+                <li><Link href="#" className="text-gray-500 hover:text-indigo-600">FAQs</Link></li>
               </ul>
             </div>
 
@@ -387,16 +387,16 @@ export default async function Home() {
                 <li>+233 XX XXX XXXX</li>
               </ul>
               <div className="flex gap-3 mt-4">
-                <Link href="#" className="text-gray-400 hover:text-[#f74780]">
+                <Link href="#" className="text-gray-400 hover:text-indigo-600">
                   <Facebook className="h-5 w-5" />
                 </Link>
-                <Link href="#" className="text-gray-400 hover:text-[#f74780]">
+                <Link href="#" className="text-gray-400 hover:text-indigo-600">
                   <Twitter className="h-5 w-5" />
                 </Link>
-                <Link href="#" className="text-gray-400 hover:text-[#f74780]">
+                <Link href="#" className="text-gray-400 hover:text-indigo-600">
                   <Instagram className="h-5 w-5" />
                 </Link>
-                <Link href="#" className="text-gray-400 hover:text-[#f74780]">
+                <Link href="#" className="text-gray-400 hover:text-indigo-600">
                   <Youtube className="h-5 w-5" />
                 </Link>
               </div>
@@ -411,8 +411,8 @@ export default async function Home() {
               © 2026 Mechatronics. All Rights Reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <Link href="#" className="text-gray-500 hover:text-[#f74780]">Terms of Service</Link>
-              <Link href="#" className="text-gray-500 hover:text-[#f74780]">Privacy Policy</Link>
+              <Link href="#" className="text-gray-500 hover:text-indigo-600">Terms of Service</Link>
+              <Link href="#" className="text-gray-500 hover:text-indigo-600">Privacy Policy</Link>
             </div>
           </div>
         </div>
