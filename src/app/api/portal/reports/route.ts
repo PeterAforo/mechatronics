@@ -179,7 +179,7 @@ async function getDeviceStatus(tenantId: bigint) {
     byType,
     devices: devices.map((d) => ({
       id: d.id.toString(),
-      name: d.deviceName,
+      name: d.nickname || `Device ${d.id}`,
       status: d.status,
       type: d.inventory?.deviceType?.name || "Unknown",
       lastSeen: d.lastSeenAt,
