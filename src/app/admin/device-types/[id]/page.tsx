@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Settings2 } from "lucide-react";
 
 interface DeviceType {
   id: string;
@@ -145,15 +145,23 @@ export default function EditDeviceTypePage({ params }: { params: Promise<{ id: s
           <h1 className="text-2xl font-semibold text-gray-900">Edit Device Type</h1>
           <p className="text-gray-500 mt-1">Update device type details</p>
         </div>
-        <Button
-          variant="outline"
-          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-          onClick={handleDelete}
-          disabled={deleting}
-        >
-          {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-          Delete
-        </Button>
+        <div className="flex gap-2">
+          <Link href={`/admin/device-types/${deviceType.id}/variables`}>
+            <Button variant="outline">
+              <Settings2 className="h-4 w-4 mr-2" />
+              Manage Variables
+            </Button>
+          </Link>
+          <Button
+            variant="outline"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={handleDelete}
+            disabled={deleting}
+          >
+            {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+            Delete
+          </Button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
