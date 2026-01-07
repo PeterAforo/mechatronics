@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, Cpu, MapPin, Bell, CreditCard, 
-  Settings, HelpCircle, FileText, Zap
+  Settings, HelpCircle, FileText, Zap, Users, Key, BarChart3, AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -32,6 +32,16 @@ const menuItems = [
     icon: Bell 
   },
   { 
+    label: "Alert Rules", 
+    href: "/portal/alert-rules", 
+    icon: AlertTriangle 
+  },
+  { 
+    label: "Reports", 
+    href: "/portal/reports", 
+    icon: BarChart3 
+  },
+  { 
     label: "Subscriptions", 
     href: "/portal/subscriptions", 
     icon: Zap 
@@ -40,6 +50,16 @@ const menuItems = [
     label: "Billing", 
     href: "/portal/billing", 
     icon: CreditCard 
+  },
+  { 
+    label: "Team", 
+    href: "/portal/team", 
+    icon: Users 
+  },
+  { 
+    label: "API Keys", 
+    href: "/portal/api-keys", 
+    icon: Key 
   },
 ];
 
