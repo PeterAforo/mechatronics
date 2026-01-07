@@ -5,10 +5,13 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(req: NextRequest) {
   const { nextUrl } = req;
   
-  // Get token without importing full auth library
+  // Get token - Auth.js v5 uses different cookie names
   const token = await getToken({ 
     req, 
-    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET 
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    cookieName: process.env.NODE_ENV === "production" 
+      ? "__Secure-authjs.session-token" 
+      : "authjs.session-token",
   });
   
   const isLoggedIn = !!token;
