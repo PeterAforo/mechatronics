@@ -2,7 +2,7 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ChevronRight, Boxes } from "lucide-react";
+import { Plus, ChevronRight, Boxes, Upload } from "lucide-react";
 
 export default async function InventoryPage() {
   const inventory = await prisma.deviceInventory.findMany({
@@ -24,12 +24,20 @@ export default async function InventoryPage() {
           <h1 className="text-2xl font-semibold text-gray-900">Inventory</h1>
           <p className="text-gray-500 mt-1">Manage device units and stock</p>
         </div>
-        <Link href="/admin/inventory/new">
-          <Button className="bg-[#f74780] hover:bg-[#e03a6f] text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Device
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/inventory/import">
+            <Button variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              Bulk Import
+            </Button>
+          </Link>
+          <Link href="/admin/inventory/new">
+            <Button className="bg-[#f74780] hover:bg-[#e03a6f] text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Device
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {inventory.length > 0 ? (

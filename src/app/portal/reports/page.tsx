@@ -54,9 +54,36 @@ export default function ReportsPage() {
     fetchReport();
   };
 
-  const handleExport = (format: string) => {
-    toast.success(`Exporting as ${format.toUpperCase()}...`);
-    // TODO: Implement actual export
+  const handleExport = async (format: string) => {
+    const params = new URLSearchParams({
+      type: reportType === "telemetry_summary" ? "telemetry" : 
+            reportType === "alert_history" ? "alerts" :
+            reportType === "device_status" ? "devices" :
+            reportType === "billing_summary" ? "billing" : "telemetry",
+      format,
+      startDate,
+      endDate,
+    });
+    
+    toast.success(`Generating ${format.toUpperCase()} export...`);
+    
+    try {
+      const res = await fetch(`/api/portal/reports/export?${params}`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `report_${reportType}_${Date.now()}.${format === "excel" ? "xls" : format}`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("Export downloaded!");
+      } else {
+        toast.error("Export failed");
+      }
+    } catch {
+      toast.error("Export failed");
+    }
   };
 
   const getReportIcon = (type: string) => {
