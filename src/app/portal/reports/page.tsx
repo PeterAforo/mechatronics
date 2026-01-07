@@ -10,8 +10,25 @@ import { toast } from "sonner";
 import { Loader2, Download, FileText, BarChart3, AlertTriangle, Cpu, DollarSign, TrendingUp } from "lucide-react";
 import { format, subDays } from "date-fns";
 
+interface VariableStats {
+  count: number;
+  min: number;
+  max: number;
+  avg: number;
+}
+
 interface ReportData {
   type: string;
+  totalReadings?: number;
+  totalAlerts?: number;
+  totalDevices?: number;
+  totalRevenue?: number;
+  byVariable?: Record<string, VariableStats>;
+  bySeverity?: Record<string, number>;
+  byStatus?: Record<string, number>;
+  byType?: Record<string, number>;
+  alerts?: Array<{ id: string; title: string; severity: string; createdAt: string }>;
+  devices?: Array<{ id: string; name: string; status: string; type: string; lastSeen: string | null }>;
   [key: string]: unknown;
 }
 
@@ -120,7 +137,7 @@ export default function ReportsPage() {
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">By Variable</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(reportData.byVariable as Record<string, { count: number; min: number; max: number; avg: number }>).map(([code, stats]) => (
+                  {Object.entries(reportData.byVariable).map(([code, stats]) => (
                     <div key={code} className="bg-white border border-gray-200 rounded-lg p-4">
                       <p className="font-mono text-sm text-gray-500">{code}</p>
                       <p className="text-2xl font-bold text-gray-900">{stats.count.toLocaleString()}</p>
@@ -149,15 +166,15 @@ export default function ReportsPage() {
                 <>
                   <div className="bg-red-50 rounded-lg p-4">
                     <p className="text-sm text-red-600 font-medium">Critical</p>
-                    <p className="text-3xl font-bold text-red-700">{(reportData.bySeverity as Record<string, number>).critical}</p>
+                    <p className="text-3xl font-bold text-red-700">{reportData.bySeverity.critical || 0}</p>
                   </div>
                   <div className="bg-yellow-50 rounded-lg p-4">
                     <p className="text-sm text-yellow-600 font-medium">Warning</p>
-                    <p className="text-3xl font-bold text-yellow-700">{(reportData.bySeverity as Record<string, number>).warning}</p>
+                    <p className="text-3xl font-bold text-yellow-700">{reportData.bySeverity.warning || 0}</p>
                   </div>
                   <div className="bg-blue-50 rounded-lg p-4">
                     <p className="text-sm text-blue-600 font-medium">Info</p>
-                    <p className="text-3xl font-bold text-blue-700">{(reportData.bySeverity as Record<string, number>).info}</p>
+                    <p className="text-3xl font-bold text-blue-700">{reportData.bySeverity.info || 0}</p>
                   </div>
                 </>
               )}
@@ -166,7 +183,7 @@ export default function ReportsPage() {
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">By Status</h3>
                 <div className="flex gap-4">
-                  {Object.entries(reportData.byStatus as Record<string, number>).map(([status, count]) => (
+                  {Object.entries(reportData.byStatus).map(([status, count]) => (
                     <Badge key={status} variant="outline" className="text-base py-2 px-4">
                       {status}: {count}
                     </Badge>
@@ -189,15 +206,15 @@ export default function ReportsPage() {
                 <>
                   <div className="bg-green-50 rounded-lg p-4">
                     <p className="text-sm text-green-600 font-medium">Active</p>
-                    <p className="text-3xl font-bold text-green-700">{(reportData.byStatus as Record<string, number>).active}</p>
+                    <p className="text-3xl font-bold text-green-700">{reportData.byStatus.active || 0}</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <p className="text-sm text-gray-600 font-medium">Inactive</p>
-                    <p className="text-3xl font-bold text-gray-700">{(reportData.byStatus as Record<string, number>).inactive}</p>
+                    <p className="text-3xl font-bold text-gray-700">{reportData.byStatus.inactive || 0}</p>
                   </div>
                   <div className="bg-red-50 rounded-lg p-4">
                     <p className="text-sm text-red-600 font-medium">Suspended</p>
-                    <p className="text-3xl font-bold text-red-700">{(reportData.byStatus as Record<string, number>).suspended}</p>
+                    <p className="text-3xl font-bold text-red-700">{reportData.byStatus.suspended || 0}</p>
                   </div>
                 </>
               )}
@@ -206,7 +223,7 @@ export default function ReportsPage() {
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">By Device Type</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {Object.entries(reportData.byType as Record<string, number>).map(([type, count]) => (
+                  {Object.entries(reportData.byType).map(([type, count]) => (
                     <div key={type} className="bg-white border border-gray-200 rounded-lg p-4">
                       <p className="text-sm text-gray-500">{type}</p>
                       <p className="text-2xl font-bold text-gray-900">{count}</p>
@@ -228,15 +245,15 @@ export default function ReportsPage() {
               </div>
               <div className="bg-green-50 rounded-lg p-4">
                 <p className="text-sm text-green-600 font-medium">Total Paid</p>
-                <p className="text-3xl font-bold text-green-700">GHS {(reportData.totalPaid as number)?.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-green-700">GHS {Number(reportData.totalPaid || 0).toLocaleString()}</p>
               </div>
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-sm text-blue-600 font-medium">Active Subscriptions</p>
-                <p className="text-3xl font-bold text-blue-700">{(reportData.activeSubscriptions as number)?.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-blue-700">{Number(reportData.activeSubscriptions || 0).toLocaleString()}</p>
               </div>
               <div className="bg-pink-50 rounded-lg p-4">
                 <p className="text-sm text-pink-600 font-medium">Monthly Recurring</p>
-                <p className="text-3xl font-bold text-pink-700">GHS {(reportData.monthlyRecurring as number)?.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-pink-700">GHS {Number(reportData.monthlyRecurring || 0).toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -252,15 +269,15 @@ export default function ReportsPage() {
               </div>
               <div className="bg-yellow-50 rounded-lg p-4">
                 <p className="text-sm text-yellow-600 font-medium">Alerts Generated</p>
-                <p className="text-3xl font-bold text-yellow-700">{(reportData.alertsGenerated as number)?.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-yellow-700">{Number(reportData.alertsGenerated || 0).toLocaleString()}</p>
               </div>
               <div className="bg-green-50 rounded-lg p-4">
                 <p className="text-sm text-green-600 font-medium">Total Devices</p>
-                <p className="text-3xl font-bold text-green-700">{(reportData.totalDevices as number)?.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-green-700">{Number(reportData.totalDevices || 0).toLocaleString()}</p>
               </div>
               <div className="bg-purple-50 rounded-lg p-4">
                 <p className="text-sm text-purple-600 font-medium">Total Sites</p>
-                <p className="text-3xl font-bold text-purple-700">{(reportData.totalSites as number)?.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-purple-700">{Number(reportData.totalSites || 0).toLocaleString()}</p>
               </div>
             </div>
           </div>
