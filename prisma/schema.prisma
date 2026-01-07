@@ -1,0 +1,641 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============== PRODUCTS & CATALOG ==============
+
+model DeviceProduct {
+  id               BigInt          @id @default(autoincrement()) @map("product_id")
+  productCode      String          @unique @map("product_code") @db.VarChar(60)
+  name             String          @db.VarChar(200)
+  shortDescription String?         @map("short_description") @db.VarChar(255)
+  description      String?         @db.Text
+  category         DeviceCategory  @default(other)
+  deviceTypeId     BigInt?         @map("device_type_id")
+  setupFee         Decimal         @default(0.00) @map("setup_fee") @db.Decimal(12, 2)
+  monthlyFee       Decimal         @default(0.00) @map("monthly_fee") @db.Decimal(12, 2)
+  currency         String          @default("GHS") @db.Char(3)
+  billingInterval  BillingInterval @default(monthly) @map("billing_interval")
+  isPublished      Boolean         @default(false) @map("is_published")
+  imageUrl         String?         @map("image_url") @db.VarChar(255)
+  termsUrl         String?         @map("terms_url") @db.VarChar(255)
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime?       @updatedAt @map("updated_at")
+  deviceType       DeviceType?     @relation(fields: [deviceTypeId], references: [id])
+  orderItems       OrderItem[]
+  subscriptions    Subscription[]
+
+  @@index([category])
+  @@index([deviceTypeId])
+  @@index([isPublished])
+  @@map("device_products")
+}
+
+model DeviceTypeVariable {
+  id            BigInt     @id @default(autoincrement()) @map("variable_id")
+  deviceTypeId  BigInt     @map("device_type_id")
+  variableCode  String     @map("variable_code") @db.VarChar(40)
+  label         String     @db.VarChar(120)
+  unit          String?    @db.VarChar(30)
+  description   String?    @db.VarChar(255)
+  minValue      Decimal?   @map("min_value") @db.Decimal(16, 6)
+  maxValue      Decimal?   @map("max_value") @db.Decimal(16, 6)
+  displayWidget WidgetType @default(numeric) @map("display_widget")
+  displayOrder  Int        @default(0) @map("display_order")
+  isAlertable   Boolean    @default(true) @map("is_alertable")
+  isRequired    Boolean    @default(false) @map("is_required")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime?  @updatedAt @map("updated_at")
+  deviceType    DeviceType @relation(fields: [deviceTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceTypeId, variableCode])
+  @@index([variableCode])
+  @@index([displayWidget])
+  @@map("device_type_variables")
+}
+
+// ============== ORDERS & SUBSCRIPTIONS ==============
+
+model Order {
+  id                 BigInt           @id @default(autoincrement()) @map("order_id")
+  tenantId           BigInt           @map("tenant_id")
+  orderRef           String           @unique @map("order_ref") @db.VarChar(80)
+  status             OrderStatus      @default(pending)
+  currency           String           @default("GHS") @db.Char(3)
+  subtotal           Decimal          @default(0.00) @db.Decimal(12, 2)
+  discount           Decimal          @default(0.00) @db.Decimal(12, 2)
+  tax                Decimal          @default(0.00) @db.Decimal(12, 2)
+  total              Decimal          @default(0.00) @db.Decimal(12, 2)
+  paymentProvider    PaymentProvider? @map("payment_provider")
+  paymentProviderRef String?          @map("payment_provider_ref") @db.VarChar(120)
+  paidAt             DateTime?        @map("paid_at")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime?        @updatedAt @map("updated_at")
+  items              OrderItem[]
+  subscriptions      Subscription[]
+
+  @@index([paidAt])
+  @@index([status])
+  @@index([tenantId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id              BigInt          @id @default(autoincrement()) @map("order_item_id")
+  orderId         BigInt          @map("order_id")
+  productId       BigInt          @map("product_id")
+  quantity        Int             @default(1)
+  setupFee        Decimal         @default(0.00) @map("setup_fee") @db.Decimal(12, 2)
+  monthlyFee      Decimal         @default(0.00) @map("monthly_fee") @db.Decimal(12, 2)
+  billingInterval BillingInterval @default(monthly) @map("billing_interval")
+  lineTotal       Decimal         @default(0.00) @map("line_total") @db.Decimal(12, 2)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         DeviceProduct   @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Subscription {
+  id                 BigInt             @id @default(autoincrement()) @map("subscription_id")
+  tenantId           BigInt             @map("tenant_id")
+  productId          BigInt             @map("product_id")
+  orderId            BigInt?            @map("order_id")
+  status             SubscriptionStatus @default(active)
+  currency           String             @default("GHS") @db.Char(3)
+  monthlyFee         Decimal            @default(0.00) @map("monthly_fee") @db.Decimal(12, 2)
+  billingInterval    BillingInterval    @default(monthly) @map("billing_interval")
+  startDate          DateTime           @map("start_date") @db.Date
+  nextBillingDate    DateTime?          @map("next_billing_date") @db.Date
+  endDate            DateTime?          @map("end_date") @db.Date
+  paymentProvider    PaymentProvider?   @map("payment_provider")
+  paymentProviderRef String?            @map("payment_provider_ref") @db.VarChar(120)
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime?          @updatedAt @map("updated_at")
+  order              Order?             @relation(fields: [orderId], references: [id])
+  product            DeviceProduct      @relation(fields: [productId], references: [id])
+  tenantDevices      TenantDevice[]
+
+  @@index([orderId])
+  @@index([nextBillingDate])
+  @@index([productId])
+  @@index([status])
+  @@index([tenantId])
+  @@map("subscriptions")
+}
+
+// ============== INVENTORY & DEVICES ==============
+
+model DeviceInventory {
+  id              BigInt          @id @default(autoincrement()) @map("inventory_id")
+  deviceTypeId    BigInt          @map("device_type_id")
+  serialNumber    String          @unique @map("serial_number") @db.VarChar(120)
+  legacyDeviceId  String?         @unique @map("legacy_device_id") @db.VarChar(100)
+  imei            String?         @db.VarChar(80)
+  simNumber       String?         @map("sim_number") @db.VarChar(50)
+  firmwareVersion String?         @map("firmware_version") @db.VarChar(80)
+  status          InventoryStatus @default(in_stock)
+  notes           String?         @db.VarChar(255)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime?       @updatedAt @map("updated_at")
+  deviceType      DeviceType      @relation(fields: [deviceTypeId], references: [id])
+  tenantDevices   TenantDevice[]
+
+  @@index([status])
+  @@index([deviceTypeId])
+  @@map("device_inventory")
+}
+
+model TenantDevice {
+  id                  BigInt               @id @default(autoincrement()) @map("tenant_device_id")
+  tenantId            BigInt               @map("tenant_id")
+  subscriptionId      BigInt               @map("subscription_id")
+  inventoryId         BigInt               @map("inventory_id")
+  siteId              BigInt?              @map("site_id")
+  zoneId              BigInt?              @map("zone_id")
+  nickname            String?              @db.VarChar(200)
+  status              TenantDeviceStatus   @default(active)
+  installedAt         DateTime?            @map("installed_at")
+  lastSeenAt          DateTime?            @map("last_seen_at")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime?            @updatedAt @map("updated_at")
+  provisioningProfile ProvisioningProfile?
+  inventory           DeviceInventory      @relation(fields: [inventoryId], references: [id])
+  subscription        Subscription         @relation(fields: [subscriptionId], references: [id])
+
+  @@unique([tenantId, inventoryId])
+  @@index([inventoryId])
+  @@index([siteId])
+  @@index([subscriptionId])
+  @@index([tenantId])
+  @@index([zoneId])
+  @@map("tenant_devices")
+}
+
+model ProvisioningProfile {
+  id              BigInt          @id @default(autoincrement()) @map("profile_id")
+  tenantDeviceId  BigInt          @unique @map("tenant_device_id")
+  provisionStatus ProvisionStatus @default(pending) @map("provision_status")
+  apiKey          String?         @map("api_key") @db.VarChar(120)
+  mqttUsername    String?         @map("mqtt_username") @db.VarChar(120)
+  mqttPassword    String?         @map("mqtt_password") @db.VarChar(255)
+  endpointUrl     String?         @map("endpoint_url") @db.VarChar(255)
+  payload         String?         @db.Text
+  generatedAt     DateTime?       @map("generated_at")
+  appliedAt       DateTime?       @map("applied_at")
+  revokedAt       DateTime?       @map("revoked_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  tenantDevice    TenantDevice    @relation(fields: [tenantDeviceId], references: [id], onDelete: Cascade)
+
+  @@map("provisioning_profiles")
+}
+
+// ============== TELEMETRY ==============
+
+model InboundMessage {
+  id                BigInt             @id @default(autoincrement()) @map("message_id")
+  tenantId          BigInt             @map("tenant_id")
+  tenantDeviceId    BigInt?            @map("tenant_device_id")
+  inventoryId       BigInt?            @map("inventory_id")
+  source            MessageSource      @default(sms)
+  fromAddress       String?            @map("from_address") @db.VarChar(80)
+  rawText           String             @map("raw_text") @db.Text
+  receivedAt        DateTime           @default(now()) @map("received_at")
+  parseStatus       ParseStatus        @default(pending) @map("parse_status")
+  parseError        String?            @map("parse_error") @db.VarChar(255)
+  telemetryKv       TelemetryKv[]
+  telemetryPayloads TelemetryPayload[]
+
+  @@index([receivedAt])
+  @@index([parseStatus])
+  @@index([tenantDeviceId])
+  @@index([tenantId])
+  @@map("inbound_messages")
+}
+
+model TelemetryKv {
+  id             BigInt          @id @default(autoincrement()) @map("telemetry_kv_id")
+  tenantId       BigInt          @map("tenant_id")
+  tenantDeviceId BigInt          @map("tenant_device_id")
+  messageId      BigInt?         @map("message_id")
+  variableCode   String          @map("variable_code") @db.VarChar(40)
+  value          Decimal         @db.Decimal(16, 6)
+  capturedAt     DateTime        @default(now()) @map("captured_at")
+  message        InboundMessage? @relation(fields: [messageId], references: [id])
+
+  @@index([messageId])
+  @@index([tenantDeviceId])
+  @@index([tenantId])
+  @@index([capturedAt])
+  @@index([variableCode])
+  @@map("telemetry_kv")
+}
+
+model TelemetryPayload {
+  id             BigInt          @id @default(autoincrement()) @map("payload_id")
+  tenantId       BigInt          @map("tenant_id")
+  tenantDeviceId BigInt          @map("tenant_device_id")
+  messageId      BigInt?         @map("message_id")
+  metricCode     String?         @map("metric_code") @db.VarChar(80)
+  payload        String          @db.Text
+  capturedAt     DateTime        @default(now()) @map("captured_at")
+  message        InboundMessage? @relation(fields: [messageId], references: [id])
+
+  @@index([messageId])
+  @@index([tenantDeviceId])
+  @@index([tenantId])
+  @@index([capturedAt])
+  @@map("telemetry_payloads")
+}
+
+// ============== ALERTS ==============
+
+model AlertRule {
+  id              BigInt       @id @default(autoincrement()) @map("alert_rule_id")
+  tenantId        BigInt?      @map("tenant_id")
+  deviceTypeId    BigInt       @map("device_type_id")
+  variableCode    String       @map("variable_code") @db.VarChar(40)
+  ruleName        String       @map("rule_name") @db.VarChar(200)
+  operator        RuleOperator @default(lte)
+  threshold1      Decimal      @map("threshold_1") @db.Decimal(16, 6)
+  threshold2      Decimal?     @map("threshold_2") @db.Decimal(16, 6)
+  severity        Severity     @default(warning)
+  messageTemplate String       @map("message_template") @db.VarChar(255)
+  isActive        Boolean      @default(true) @map("is_active")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  @@index([isActive])
+  @@index([deviceTypeId])
+  @@index([tenantId])
+  @@index([variableCode])
+  @@map("alert_rules")
+}
+
+model Alert {
+  id             BigInt      @id @default(autoincrement()) @map("alert_id")
+  tenantId       BigInt      @map("tenant_id")
+  tenantDeviceId BigInt      @map("tenant_device_id")
+  alertRuleId    BigInt?     @map("alert_rule_id")
+  variableCode   String      @map("variable_code") @db.VarChar(40)
+  value          Decimal     @db.Decimal(16, 6)
+  severity       Severity    @default(warning)
+  title          String      @db.VarChar(200)
+  message        String      @db.Text
+  status         AlertStatus @default(open)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  resolvedAt     DateTime?   @map("resolved_at")
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([tenantDeviceId])
+  @@index([tenantId])
+  @@map("alerts")
+}
+
+model AlertAcknowledgement {
+  id                   BigInt   @id @default(autoincrement()) @map("ack_id")
+  alertId              BigInt   @map("alert_id")
+  acknowledgedByUserId BigInt?  @map("acknowledged_by_user_id")
+  note                 String?  @db.VarChar(255)
+  acknowledgedAt       DateTime @default(now()) @map("acknowledged_at")
+
+  @@index([alertId])
+  @@map("alert_acknowledgements")
+}
+
+model NotificationLog {
+  id          BigInt                @id @default(autoincrement()) @map("notification_id")
+  tenantId    BigInt                @map("tenant_id")
+  alertId     BigInt?               @map("alert_id")
+  channel     NotificationChannel
+  recipient   String                @db.VarChar(200)
+  subject     String?               @db.VarChar(200)
+  message     String                @db.Text
+  provider    NotificationProvider?
+  providerRef String?               @map("provider_ref") @db.VarChar(120)
+  status      NotificationStatus    @default(queued)
+  sentAt      DateTime?             @map("sent_at")
+  createdAt   DateTime              @default(now()) @map("created_at")
+
+  @@index([alertId])
+  @@index([status])
+  @@index([tenantId])
+  @@map("notification_log")
+}
+
+// ============== ADMIN & TENANTS ==============
+
+model AdminUser {
+  id           BigInt          @id @default(autoincrement()) @map("admin_id")
+  email        String          @unique @db.VarChar(200)
+  passwordHash String          @map("password_hash") @db.VarChar(255)
+  name         String?         @db.VarChar(200)
+  role         AdminRole       @default(admin)
+  status       AdminStatus     @default(active)
+  lastLoginAt  DateTime?       @map("last_login_at")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime?       @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("admin_users")
+}
+
+model Tenant {
+  id           BigInt        @id @default(autoincrement()) @map("tenant_id")
+  tenantCode   String        @unique @map("tenant_code") @db.VarChar(60)
+  companyName  String        @map("company_name") @db.VarChar(200)
+  contactName  String?       @map("contact_name") @db.VarChar(200)
+  email        String        @unique @db.VarChar(200)
+  phone        String?       @db.VarChar(50)
+  address      String?       @db.Text
+  city         String?       @db.VarChar(100)
+  country      String?       @default("Ghana") @db.VarChar(100)
+  status       TenantStatus  @default(active)
+  billingEmail String?       @map("billing_email") @db.VarChar(200)
+  logoUrl      String?       @map("logo_url") @db.VarChar(255)
+  timezone     String?       @default("Africa/Accra") @db.VarChar(60)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime?     @updatedAt @map("updated_at")
+  sites        TenantSite[]
+  users        TenantUser[]
+
+  @@index([status])
+  @@map("tenants")
+}
+
+model TenantUser {
+  id              BigInt           @id @default(autoincrement()) @map("user_id")
+  tenantId        BigInt           @map("tenant_id")
+  email           String           @unique @db.VarChar(200)
+  passwordHash    String           @map("password_hash") @db.VarChar(255)
+  name            String?          @db.VarChar(200)
+  phone           String?          @db.VarChar(50)
+  role            TenantUserRole   @default(user)
+  status          TenantUserStatus @default(pending)
+  emailVerifiedAt DateTime?        @map("email_verified_at")
+  lastLoginAt     DateTime?        @map("last_login_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime?        @updatedAt @map("updated_at")
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([tenantId])
+  @@map("tenant_users")
+}
+
+model TenantSite {
+  id        BigInt       @id @default(autoincrement()) @map("site_id")
+  tenantId  BigInt       @map("tenant_id")
+  siteName  String       @map("site_name") @db.VarChar(200)
+  address   String?      @db.Text
+  city      String?      @db.VarChar(100)
+  country   String?      @default("Ghana") @db.VarChar(100)
+  latitude  Decimal?     @db.Decimal(10, 8)
+  longitude Decimal?     @db.Decimal(11, 8)
+  timezone  String?      @default("Africa/Accra") @db.VarChar(60)
+  status    SiteStatus   @default(active)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime?    @updatedAt @map("updated_at")
+  zones     SiteZone[]
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([tenantId])
+  @@map("tenant_sites")
+}
+
+model SiteZone {
+  id          BigInt     @id @default(autoincrement()) @map("zone_id")
+  siteId      BigInt     @map("site_id")
+  zoneName    String     @map("zone_name") @db.VarChar(200)
+  description String?    @db.VarChar(255)
+  zoneType    ZoneType   @default(indoor) @map("zone_type")
+  status      ZoneStatus @default(active)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime?  @updatedAt @map("updated_at")
+  site        TenantSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
+  @@index([status])
+  @@map("site_zones")
+}
+
+model DeviceType {
+  id                    BigInt               @id @default(autoincrement()) @map("device_type_id")
+  typeCode              String               @unique @map("type_code") @db.VarChar(60)
+  name                  String               @db.VarChar(200)
+  category              DeviceCategory       @default(other)
+  description           String?              @db.Text
+  manufacturer          String?              @default("Mechatronics") @db.VarChar(200)
+  modelNumber           String?              @map("model_number") @db.VarChar(100)
+  firmwareVersion       String?              @map("firmware_version") @db.VarChar(80)
+  communicationProtocol CommunicationProtocol @default(sms) @map("communication_protocol")
+  imageUrl              String?              @map("image_url") @db.VarChar(255)
+  specs                 String?              @db.Text
+  isActive              Boolean              @default(true) @map("is_active")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime?            @updatedAt @map("updated_at")
+  products              DeviceProduct[]
+  inventory             DeviceInventory[]
+  variables             DeviceTypeVariable[]
+
+  @@index([isActive])
+  @@index([category])
+  @@map("device_types")
+}
+
+// ============== ENUMS ==============
+
+enum DeviceCategory {
+  water
+  power
+  security
+  environment
+  industrial
+  healthcare
+  other
+}
+
+enum BillingInterval {
+  monthly
+  quarterly
+  yearly
+}
+
+enum WidgetType {
+  numeric
+  gauge
+  tank_fill
+  chart_line
+  chart_bar
+  status_badge
+  custom
+}
+
+enum RuleOperator {
+  lt
+  lte
+  eq
+  neq
+  gte
+  gt
+  between
+  outside
+}
+
+enum Severity {
+  info
+  warning
+  critical
+}
+
+enum OrderStatus {
+  pending
+  paid
+  failed
+  cancelled
+  refunded
+}
+
+enum PaymentProvider {
+  hubtel
+  momo
+  card
+  bank
+  cash
+  other
+}
+
+enum SubscriptionStatus {
+  active
+  trial
+  overdue
+  suspended
+  cancelled
+  expired
+}
+
+enum InventoryStatus {
+  in_stock
+  sold
+  installed
+  returned
+  retired
+}
+
+enum TenantDeviceStatus {
+  active
+  inactive
+  suspended
+  retired
+}
+
+enum ProvisionStatus {
+  pending
+  generated
+  applied
+  revoked
+}
+
+enum MessageSource {
+  sms
+  http
+  mqtt
+  import
+}
+
+enum ParseStatus {
+  pending
+  parsed
+  failed
+}
+
+enum AlertStatus {
+  open
+  acknowledged
+  resolved
+  closed
+}
+
+enum NotificationChannel {
+  push
+  sms
+  email
+  whatsapp
+}
+
+enum NotificationProvider {
+  mnotify
+  firebase
+  hubtel
+  smtp
+  other
+}
+
+enum NotificationStatus {
+  queued
+  sent
+  failed
+}
+
+enum AdminRole {
+  superadmin
+  admin
+  support
+}
+
+enum AdminStatus {
+  active
+  inactive
+}
+
+enum TenantStatus {
+  active
+  suspended
+  cancelled
+}
+
+enum TenantUserRole {
+  owner
+  admin
+  user
+  viewer
+}
+
+enum TenantUserStatus {
+  active
+  inactive
+  pending
+}
+
+enum SiteStatus {
+  active
+  inactive
+}
+
+enum ZoneType {
+  indoor
+  outdoor
+  mixed
+}
+
+enum ZoneStatus {
+  active
+  inactive
+}
+
+enum CommunicationProtocol {
+  sms
+  http
+  mqtt
+  lora
+  zigbee
+  other
+}
