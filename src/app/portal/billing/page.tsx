@@ -136,7 +136,7 @@ export default async function BillingPage() {
                     {new Date(order.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 font-medium text-gray-900">
-                    {order.currency} {Number(order.totalAmount).toFixed(2)}
+                    {order.currency} {Number(order.total).toFixed(2)}
                   </td>
                   <td className="px-6 py-4">
                     <Badge 
