@@ -58,7 +58,7 @@ export async function PATCH(req: NextRequest) {
   if (name && session.user.id) {
     await prisma.tenantUser.update({
       where: { id: BigInt(session.user.id) },
-      data: { fullName: name },
+      data: { name },
     });
   }
 
