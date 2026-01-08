@@ -4,9 +4,14 @@ import { getToken } from "next-auth/jwt";
 
 export async function middleware(request: NextRequest) {
   // Use getToken for Edge-compatible JWT verification
+  // NextAuth v5 uses different cookie names for secure (HTTPS) vs non-secure (HTTP)
   const token = await getToken({ 
     req: request,
     secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    secureCookie: request.nextUrl.protocol === "https:",
+    cookieName: request.nextUrl.protocol === "https:" 
+      ? "__Secure-authjs.session-token" 
+      : "authjs.session-token",
   });
   
   const { nextUrl } = request;
