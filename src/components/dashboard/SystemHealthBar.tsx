@@ -100,7 +100,7 @@ export function SystemHealthBar({
             className={cn(
               "absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full",
               config.bg,
-              healthStatus === "healthy" && "animate-pulse"
+              derivedStatus === "ok" && "animate-pulse"
             )}
           />
         </div>
