@@ -37,7 +37,7 @@ export default function OrderActions({ orderId, status, total, currency }: Order
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
-  const [paymentProvider, setPaymentProvider] = useState("manual");
+  const [paymentProvider, setPaymentProvider] = useState("other");
   const [paymentRef, setPaymentRef] = useState("");
 
   const handleAction = async (action: string, extraData?: Record<string, string>) => {
