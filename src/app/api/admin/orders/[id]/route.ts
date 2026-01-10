@@ -7,31 +7,39 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user || session.user.userType !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  try {
+    const session = await auth();
+    if (!session?.user || session.user.userType !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const { id } = await params;
+    const { id } = await params;
 
-  const order = await prisma.order.findUnique({
-    where: { id: BigInt(id) },
-    include: {
-      items: {
-        include: { product: true },
+    const order = await prisma.order.findUnique({
+      where: { id: BigInt(id) },
+      include: {
+        items: {
+          include: { product: true },
+        },
       },
-    },
-  });
+    });
 
-  if (!order) {
-    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      ...order,
+      id: order.id.toString(),
+      tenantId: order.tenantId.toString(),
+    });
+  } catch (error) {
+    console.error("GET /api/admin/orders/[id] error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({
-    ...order,
-    id: order.id.toString(),
-    tenantId: order.tenantId.toString(),
-  });
 }
 
 // PATCH - Update order status (approve/cancel)
@@ -39,124 +47,132 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user || session.user.userType !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { id } = await params;
-  const body = await req.json();
-  const { action, paymentProvider, paymentProviderRef } = body;
-
-  const order = await prisma.order.findUnique({
-    where: { id: BigInt(id) },
-    include: {
-      items: {
-        include: { product: true },
-      },
-    },
-  });
-
-  if (!order) {
-    return NextResponse.json({ error: "Order not found" }, { status: 404 });
-  }
-
-  if (action === "approve" || action === "mark_paid") {
-    if (order.status === "paid") {
-      return NextResponse.json({ error: "Order is already paid" }, { status: 400 });
+  try {
+    const session = await auth();
+    if (!session?.user || session.user.userType !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Update order to paid
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: "paid",
-        paidAt: new Date(),
-        paymentProvider: paymentProvider || "other",
-        paymentProviderRef: paymentProviderRef || `ADMIN-${session.user.id}-${Date.now()}`,
+    const { id } = await params;
+    const body = await req.json();
+    const { action, paymentProvider, paymentProviderRef } = body;
+
+    const order = await prisma.order.findUnique({
+      where: { id: BigInt(id) },
+      include: {
+        items: {
+          include: { product: true },
+        },
       },
     });
 
-    // Process the order - create subscriptions and assign inventory
-    const result = await processOrderPayment(order.id, order.tenantId);
-
-    return NextResponse.json({ 
-      success: true, 
-      message: `Order approved! ${result.subscriptionsCreated} subscription(s) created, ${result.devicesAssigned} device(s) assigned.`,
-      status: "paid",
-      subscriptionsCreated: result.subscriptionsCreated,
-      devicesAssigned: result.devicesAssigned,
-    });
-  }
-
-  if (action === "cancel") {
-    if (order.status === "paid") {
-      return NextResponse.json({ error: "Cannot cancel a paid order. Use refund instead." }, { status: 400 });
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: "cancelled",
-      },
-    });
+    if (action === "approve" || action === "mark_paid") {
+      if (order.status === "paid") {
+        return NextResponse.json({ error: "Order is already paid" }, { status: 400 });
+      }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Order cancelled",
-      status: "cancelled"
-    });
-  }
-
-  if (action === "refund") {
-    if (order.status !== "paid") {
-      return NextResponse.json({ error: "Can only refund paid orders" }, { status: 400 });
-    }
-
-    // Deactivate subscriptions
-    await prisma.subscription.updateMany({
-      where: { orderId: order.id },
-      data: { status: "cancelled" },
-    });
-
-    // Release inventory back to stock
-    const subscriptions = await prisma.subscription.findMany({
-      where: { orderId: order.id },
-    });
-
-    for (const sub of subscriptions) {
-      const tenantDevice = await prisma.tenantDevice.findFirst({
-        where: { subscriptionId: sub.id },
+      // Update order to paid
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: "paid",
+          paidAt: new Date(),
+          paymentProvider: paymentProvider || "other",
+          paymentProviderRef: paymentProviderRef || `ADMIN-${session.user.id}-${Date.now()}`,
+        },
       });
 
-      if (tenantDevice?.inventoryId) {
-        await prisma.deviceInventory.update({
-          where: { id: tenantDevice.inventoryId },
-          data: { status: "in_stock" },
-        });
+      // Process the order - create subscriptions and assign inventory
+      const result = await processOrderPayment(order.id, order.tenantId);
 
-        await prisma.tenantDevice.update({
-          where: { id: tenantDevice.id },
-          data: { status: "inactive" },
-        });
-      }
+      return NextResponse.json({ 
+        success: true, 
+        message: `Order approved! ${result.subscriptionsCreated} subscription(s) created, ${result.devicesAssigned} device(s) assigned.`,
+        status: "paid",
+        subscriptionsCreated: result.subscriptionsCreated,
+        devicesAssigned: result.devicesAssigned,
+      });
     }
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: "refunded",
-      },
-    });
+    if (action === "cancel") {
+      if (order.status === "paid") {
+        return NextResponse.json({ error: "Cannot cancel a paid order. Use refund instead." }, { status: 400 });
+      }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Order refunded and subscriptions cancelled",
-      status: "refunded"
-    });
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: "cancelled",
+        },
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        message: "Order cancelled",
+        status: "cancelled"
+      });
+    }
+
+    if (action === "refund") {
+      if (order.status !== "paid") {
+        return NextResponse.json({ error: "Can only refund paid orders" }, { status: 400 });
+      }
+
+      // Deactivate subscriptions
+      await prisma.subscription.updateMany({
+        where: { orderId: order.id },
+        data: { status: "cancelled" },
+      });
+
+      // Release inventory back to stock
+      const subscriptions = await prisma.subscription.findMany({
+        where: { orderId: order.id },
+      });
+
+      for (const sub of subscriptions) {
+        const tenantDevice = await prisma.tenantDevice.findFirst({
+          where: { subscriptionId: sub.id },
+        });
+
+        if (tenantDevice?.inventoryId) {
+          await prisma.deviceInventory.update({
+            where: { id: tenantDevice.inventoryId },
+            data: { status: "in_stock" },
+          });
+
+          await prisma.tenantDevice.update({
+            where: { id: tenantDevice.id },
+            data: { status: "inactive" },
+          });
+        }
+      }
+
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: "refunded",
+        },
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        message: "Order refunded and subscriptions cancelled",
+        status: "refunded"
+      });
+    }
+
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    console.error("PATCH /api/admin/orders/[id] error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
 
 /**
