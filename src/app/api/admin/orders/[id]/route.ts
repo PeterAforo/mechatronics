@@ -72,7 +72,7 @@ export async function PATCH(
       data: {
         status: "paid",
         paidAt: new Date(),
-        paymentProvider: paymentProvider || "manual",
+        paymentProvider: paymentProvider || "other",
         paymentProviderRef: paymentProviderRef || `ADMIN-${session.user.id}-${Date.now()}`,
       },
     });
