@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
+import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
 import { 
   Droplets, Zap, Thermometer, Cpu,
-  ChevronRight, ChevronLeft, Star, TrendingUp, Clock, 
+  ChevronRight, TrendingUp, 
   CheckCircle2, Wifi, AlertTriangle, Activity, Bell
 } from "lucide-react";
 
@@ -89,11 +90,6 @@ export default async function TenantPortalPage() {
     { id: 4, title: "Active Sites", count: sites.length, icon: "sites", color: "green" },
   ];
 
-  // Calendar data
-  const today = new Date();
-  const currentMonth = today.toLocaleString("default", { month: "long", year: "numeric" });
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
 
   // Category icons mapping
   const categoryIcons: Record<string, React.ReactNode> = {
@@ -336,43 +332,7 @@ export default async function TenantPortalPage() {
           </div>
 
           {/* Calendar */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <button className="p-1 hover:bg-gray-100 rounded-lg">
-                <ChevronLeft className="h-5 w-5 text-gray-400" />
-              </button>
-              <h3 className="font-semibold text-gray-900">{currentMonth}</h3>
-              <button className="p-1 hover:bg-gray-100 rounded-lg">
-                <ChevronRight className="h-5 w-5 text-gray-400" />
-              </button>
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-center mb-2">
-              {["S", "M", "T", "W", "T", "F", "S"].map((day, idx) => (
-                <span key={idx} className="text-xs font-medium text-gray-400 py-2">{day}</span>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-center">
-              {Array.from({ length: firstDayOfMonth }).map((_, idx) => (
-                <span key={`empty-${idx}`} className="text-sm py-2" />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, idx) => {
-                const day = idx + 1;
-                const isToday = day === today.getDate();
-                return (
-                  <span 
-                    key={day} 
-                    className={`text-sm py-2 rounded-lg cursor-pointer transition-colors ${
-                      isToday 
-                        ? "bg-purple-600 text-white font-medium" 
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    {day}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
+          <CalendarWidget />
 
           {/* Alerts */}
           <div className="bg-white rounded-2xl p-5 border border-gray-100">
