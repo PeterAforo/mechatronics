@@ -4,10 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { WebsiteLayout, PageHeader } from "@/components/website";
 import { 
-  Droplets, 
-  Zap, 
-  ArrowLeft,
   Target,
   Eye,
   Heart,
@@ -77,50 +75,13 @@ const values = [
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4">
-          <div className="flex h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex gap-1">
-                <div className="p-1.5 bg-cyan-500/20 rounded-lg">
-                  <Droplets className="h-4 w-4 text-cyan-500" />
-                </div>
-                <div className="p-1.5 bg-yellow-500/20 rounded-lg">
-                  <Zap className="h-4 w-4 text-yellow-500" />
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">Mechatronics</span>
-            </Link>
-            
-            <Link href="/">
-              <Button variant="ghost" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="relative bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-600 py-24 overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl" />
-        </div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center text-white">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              About Mechatronics
-            </h1>
-            <p className="text-xl text-white/90 mb-8">
-              We're on a mission to bring smart monitoring solutions to every home, business, and industry in Africa.
-            </p>
-          </div>
-        </div>
-      </section>
+    <WebsiteLayout>
+      <PageHeader
+        title="About Us"
+        subtitle="We're on a mission to bring smart monitoring solutions to every home, business, and industry in Africa."
+        breadcrumbs={[{ label: "About" }]}
+        backgroundImage="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&h=600&fit=crop"
+      />
 
       {/* Our Story */}
       <section className="py-24">
@@ -273,7 +234,7 @@ export default function AboutPage() {
       {/* CTA */}
       <section className="py-24">
         <div className="container mx-auto px-4">
-          <div className="bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-600 rounded-3xl p-12 md:p-16 text-center max-w-4xl mx-auto">
+          <div className="bg-gradient-to-br from-[#f74780] to-[#f74780]/80 rounded-3xl p-12 md:p-16 text-center max-w-4xl mx-auto">
             <Users className="h-12 w-12 text-white/80 mx-auto mb-6" />
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Join Our Growing Family
@@ -283,7 +244,7 @@ export default function AboutPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">
-                <Button size="lg" className="bg-white text-indigo-600 hover:bg-gray-100 rounded-lg px-8 py-6 text-lg font-semibold transition-all hover:scale-105">
+                <Button size="lg" className="bg-white text-[#f74780] hover:bg-gray-100 rounded-lg px-8 py-6 text-lg font-semibold transition-all hover:scale-105">
                   Get Started Today
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -297,15 +258,6 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-8 bg-slate-900">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-500 text-sm">
-            © 2026 Mechatronics. All Rights Reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+    </WebsiteLayout>
   );
 }

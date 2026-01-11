@@ -273,6 +273,42 @@ export default function EditDeviceTypePage({ params }: { params: Promise<{ id: s
           </Link>
         </div>
       </form>
+
+      {/* Telemetry URL Info */}
+      <div className="mt-6 bg-blue-50 rounded-xl border border-blue-100 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Telemetry Endpoint</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Devices of this type should send telemetry data to the following URL:
+        </p>
+        <div className="bg-white rounded-lg border border-blue-200 p-4 font-mono text-sm">
+          <code className="text-blue-700">
+            POST https://mechatronics.com.gh/api/ingest
+          </code>
+        </div>
+        <div className="mt-4 space-y-2">
+          <p className="text-sm font-medium text-gray-700">Required URL Parameters:</p>
+          <div className="grid gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <code className="bg-gray-100 px-2 py-1 rounded text-gray-800">device_id</code>
+              <span className="text-gray-500">— Unique device serial number</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="bg-gray-100 px-2 py-1 rounded text-gray-800">tenant_id</code>
+              <span className="text-gray-500">— Tenant ID (assigned after purchase)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="bg-gray-100 px-2 py-1 rounded text-gray-800">api_key</code>
+              <span className="text-gray-500">— API key for authentication</span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            <strong>Example:</strong><br />
+            <code className="text-xs">POST /api/ingest?device_id=WAT100-001&tenant_id=123&api_key=xxx</code>
+          </p>
+        </div>
+      </div>
     </main>
   );
 }

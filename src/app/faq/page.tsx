@@ -3,14 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Droplets, 
-  Zap, 
-  HelpCircle,
-  ArrowLeft,
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
+import { WebsiteLayout, PageHeader } from "@/components/website";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 const faqs = [
   {
@@ -144,43 +138,13 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 
 export default function FAQPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4">
-          <div className="flex h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex gap-1">
-                <div className="p-1.5 bg-cyan-500/20 rounded-lg">
-                  <Droplets className="h-4 w-4 text-cyan-500" />
-                </div>
-                <div className="p-1.5 bg-yellow-500/20 rounded-lg">
-                  <Zap className="h-4 w-4 text-yellow-500" />
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">Mechatronics</span>
-            </Link>
-            
-            <Link href="/">
-              <Button variant="ghost" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-600 py-16">
-        <div className="container mx-auto px-4 text-center text-white">
-          <HelpCircle className="h-12 w-12 mx-auto mb-4 opacity-80" />
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Frequently Asked Questions</h1>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto">
-            Find answers to common questions about our IoT monitoring solutions.
-          </p>
-        </div>
-      </section>
+    <WebsiteLayout>
+      <PageHeader
+        title="Frequently Asked Questions"
+        subtitle="Find answers to common questions about our IoT monitoring solutions."
+        breadcrumbs={[{ label: "FAQ" }]}
+        backgroundImage="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1920&h=600&fit=crop"
+      />
 
       {/* FAQ Content */}
       <section className="py-16">
@@ -217,14 +181,6 @@ export default function FAQPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 bg-white border-t border-gray-200">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-500 text-sm">
-            © 2026 Mechatronics. All Rights Reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+    </WebsiteLayout>
   );
 }

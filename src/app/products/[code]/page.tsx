@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { WebsiteLayout, PageHeader } from "@/components/website";
 import { 
   ArrowLeft, Check, Droplets, Zap, Thermometer, Shield, Factory, Heart,
   ShoppingCart
@@ -44,43 +45,25 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const colors = categoryColors[product.category] || categoryColors.other;
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <div className="container mx-auto px-4">
-          <div className="flex h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex gap-1">
-                <div className="p-1.5 bg-cyan-500/20 rounded-lg">
-                  <Droplets className="h-4 w-4 text-cyan-500" />
-                </div>
-                <div className="p-1.5 bg-yellow-500/20 rounded-lg">
-                  <Zap className="h-4 w-4 text-yellow-500" />
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">Mechatronics</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/login" className="text-gray-700 hover:text-[#f74780] font-medium hidden sm:block">
-                Sign in
-              </Link>
-              <Link href="/register">
-                <Button className="bg-[#f74780] hover:bg-[#e03a6f] text-white rounded-lg px-6">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+    <WebsiteLayout>
+      <PageHeader
+        title={product.name}
+        subtitle={product.shortDescription || "Smart IoT monitoring solution"}
+        breadcrumbs={[
+          { label: "Products", href: "/#products" },
+          { label: product.name },
+        ]}
+        backgroundImage="https://images.unsplash.com/photo-1518770660439-4636190af475?w=1920&h=600&fit=crop"
+      />
 
-      <main className="container mx-auto px-4 pt-28 pb-16">
-        <Link href="/#products" className="inline-flex items-center text-gray-500 hover:text-[#f74780] mb-8">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Products
-        </Link>
+      <section className="py-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link href="/#products" className="inline-flex items-center text-gray-500 hover:text-[#f74780] mb-8">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Products
+          </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Image/Icon */}
           <div className="bg-gray-50 rounded-2xl p-12 flex items-center justify-center border border-gray-200">
             {product.imageUrl ? (
@@ -170,40 +153,32 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           </div>
         )}
 
-        {/* Device Type Info */}
-        {product.deviceType && (
-          <div className="mt-8 bg-gray-50 rounded-xl p-8 border border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Technical Specifications</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div>
-                <p className="text-gray-500 text-sm">Device Model</p>
-                <p className="text-gray-900 font-medium">{product.deviceType.typeCode}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Manufacturer</p>
-                <p className="text-gray-900 font-medium">{product.deviceType.manufacturer || "Mechatronics"}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Communication</p>
-                <p className="text-gray-900 font-medium capitalize">{product.deviceType.communicationProtocol}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Category</p>
-                <p className="text-gray-900 font-medium capitalize">{product.deviceType.category}</p>
+          {/* Device Type Info */}
+          {product.deviceType && (
+            <div className="mt-8 bg-gray-50 rounded-xl p-8 border border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Technical Specifications</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <p className="text-gray-500 text-sm">Device Model</p>
+                  <p className="text-gray-900 font-medium">{product.deviceType.typeCode}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Manufacturer</p>
+                  <p className="text-gray-900 font-medium">{product.deviceType.manufacturer || "Mechatronics"}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Communication</p>
+                  <p className="text-gray-900 font-medium capitalize">{product.deviceType.communicationProtocol}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Category</p>
+                  <p className="text-gray-900 font-medium capitalize">{product.deviceType.category}</p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-200 py-8">
-        <div className="container mx-auto px-4">
-          <p className="text-center text-gray-500 text-sm">
-            © 2026 Mechatronics. All rights reserved.
-          </p>
+          )}
         </div>
-      </footer>
-    </div>
+      </section>
+    </WebsiteLayout>
   );
 }

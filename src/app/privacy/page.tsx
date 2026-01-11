@@ -1,46 +1,14 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Droplets, Zap, ArrowLeft, Shield } from "lucide-react";
+import { WebsiteLayout, PageHeader } from "@/components/website";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4">
-          <div className="flex h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex gap-1">
-                <div className="p-1.5 bg-cyan-500/20 rounded-lg">
-                  <Droplets className="h-4 w-4 text-cyan-500" />
-                </div>
-                <div className="p-1.5 bg-yellow-500/20 rounded-lg">
-                  <Zap className="h-4 w-4 text-yellow-500" />
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">Mechatronics</span>
-            </Link>
-            
-            <Link href="/">
-              <Button variant="ghost" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-600 py-16">
-        <div className="container mx-auto px-4 text-center text-white">
-          <Shield className="h-12 w-12 mx-auto mb-4 opacity-80" />
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Privacy Policy</h1>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto">
-            Last updated: January 2026
-          </p>
-        </div>
-      </section>
+    <WebsiteLayout>
+      <PageHeader
+        title="Privacy Policy"
+        subtitle="Last updated: January 2026"
+        breadcrumbs={[{ label: "Privacy Policy" }]}
+        backgroundImage="https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1920&h=600&fit=crop"
+      />
 
       {/* Content */}
       <section className="py-16">
@@ -150,14 +118,6 @@ export default function PrivacyPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 bg-white border-t border-gray-200">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-500 text-sm">
-            © 2026 Mechatronics. All Rights Reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+    </WebsiteLayout>
   );
 }

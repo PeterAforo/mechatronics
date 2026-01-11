@@ -1,23 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Droplets, 
-  Zap, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Clock,
-  Send,
-  MessageSquare,
-  ArrowLeft
-} from "lucide-react";
+import { WebsiteLayout, PageHeader } from "@/components/website";
+import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ContactPage() {
@@ -43,43 +33,13 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4">
-          <div className="flex h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex gap-1">
-                <div className="p-1.5 bg-cyan-500/20 rounded-lg">
-                  <Droplets className="h-4 w-4 text-cyan-500" />
-                </div>
-                <div className="p-1.5 bg-yellow-500/20 rounded-lg">
-                  <Zap className="h-4 w-4 text-yellow-500" />
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">Mechatronics</span>
-            </Link>
-            
-            <Link href="/">
-              <Button variant="ghost" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-600 py-16">
-        <div className="container mx-auto px-4 text-center text-white">
-          <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-80" />
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Contact Us</h1>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto">
-            Have questions about our IoT monitoring solutions? We're here to help.
-          </p>
-        </div>
-      </section>
+    <WebsiteLayout>
+      <PageHeader
+        title="Contact Us"
+        subtitle="Have questions about our IoT monitoring solutions? We're here to help."
+        breadcrumbs={[{ label: "Contact" }]}
+        backgroundImage="https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=1920&h=600&fit=crop"
+      />
 
       {/* Content */}
       <section className="py-16">
@@ -244,14 +204,6 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 bg-white border-t border-gray-200">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-500 text-sm">
-            © 2026 Mechatronics. All Rights Reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+    </WebsiteLayout>
   );
 }
