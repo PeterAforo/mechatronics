@@ -28,6 +28,17 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
 
   const devices = await prisma.tenantDevice.findMany({
     where: { tenantId: BigInt(id) },
+    include: {
+      inventory: {
+        include: {
+          deviceType: {
+            include: {
+              variables: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   const statusColors: Record<string, string> = {
@@ -134,28 +145,69 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
               Use these URLs to configure devices to send telemetry data to the platform.
             </p>
             {devices.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {devices.map((device) => {
-                  const telemetryUrl = `https://www.mechatronics.com.gh/api/ingest?tenant_id=${tenant.id}&device_id=${device.id}`;
+                  const deviceType = device.inventory?.deviceType;
+                  const variables = deviceType?.variables || [];
+                  const variableParams = variables.map(v => `${v.variableCode}={value}`).join("&");
+                  const telemetryUrl = `https://www.mechatronics.com.gh/api/ingest?tenant_id=${tenant.id}&device_id=${device.id}${variableParams ? `&${variableParams}` : ""}`;
+                  
                   return (
                     <div key={device.id.toString()} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Cpu className="h-4 w-4 text-gray-500" />
                           <span className="font-medium text-gray-900">{device.nickname || `Device ${device.id}`}</span>
+                          {deviceType && (
+                            <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                              {deviceType.name}
+                            </Badge>
+                          )}
                         </div>
                         <Badge variant="outline" className={device.status === "active" ? "border-green-200 bg-green-50 text-green-700" : "border-gray-200"}>
                           {device.status}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <code className="flex-1 text-xs font-mono bg-white px-3 py-2 rounded border border-gray-200 overflow-x-auto">
-                          {telemetryUrl}
-                        </code>
-                        <CopyButton text={telemetryUrl} />
+                      
+                      {/* Telemetry URL */}
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-500 mb-1 font-medium">Telemetry URL:</p>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 text-xs font-mono bg-white px-3 py-2 rounded border border-gray-200 overflow-x-auto whitespace-nowrap">
+                            {telemetryUrl}
+                          </code>
+                          <CopyButton text={telemetryUrl} />
+                        </div>
                       </div>
-                      <div className="mt-2 text-xs text-gray-500">
-                        <span className="font-medium">Parameters:</span> tenant_id={tenant.id.toString()}, device_id={device.id.toString()}
+                      
+                      {/* Variables */}
+                      {variables.length > 0 && (
+                        <div className="mt-3 p-3 bg-white rounded border border-gray-200">
+                          <p className="text-xs font-medium text-gray-700 mb-2">Device Type Variables ({deviceType?.typeCode}):</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {variables.map((variable) => (
+                              <div key={variable.id.toString()} className="flex items-center gap-2 text-xs">
+                                <code className="bg-gray-100 px-2 py-1 rounded font-mono text-blue-700">{variable.variableCode}</code>
+                                <span className="text-gray-500">{variable.label}</span>
+                                <span className="text-gray-400">({variable.unit || "—"})</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Parameters Summary */}
+                      <div className="mt-3 text-xs text-gray-500">
+                        <span className="font-medium">Required Parameters:</span>
+                        <ul className="mt-1 ml-4 list-disc">
+                          <li><code className="bg-gray-100 px-1 rounded">tenant_id</code> = {tenant.id.toString()}</li>
+                          <li><code className="bg-gray-100 px-1 rounded">device_id</code> = {device.id.toString()}</li>
+                          {variables.map((v) => (
+                            <li key={v.id.toString()}>
+                              <code className="bg-gray-100 px-1 rounded">{v.variableCode}</code> = {`{${v.label} value}`}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </div>
                   );
