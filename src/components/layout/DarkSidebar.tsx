@@ -3,29 +3,76 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LucideIcon } from "lucide-react";
+import { 
+  Package, Users, Factory, ShoppingCart,
+  Settings, Boxes, BarChart3, Home, Cpu,
+  Bell, Shield, CreditCard, Radio,
+  LayoutDashboard, Wifi, AlertTriangle, Building2,
+  Key, FileText, LucideIcon
+} from "lucide-react";
 
 interface NavItem {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: string;
   exact?: boolean;
 }
 
 interface DarkSidebarProps {
   brandName: string;
-  navItems: NavItem[];
-  bottomNavItems?: NavItem[];
   userType: "admin" | "portal";
 }
 
+const iconMap: Record<string, LucideIcon> = {
+  Home, LayoutDashboard, Radio, Package, Factory, Boxes, Cpu,
+  Users, ShoppingCart, CreditCard, Bell, Shield, BarChart3,
+  Settings, Wifi, AlertTriangle, Building2, Key, FileText
+};
+
+const adminNavItems: NavItem[] = [
+  { href: "/admin", label: "Dashboard", icon: "Home", exact: true },
+  { href: "/admin/telemetry", label: "Telemetry", icon: "Radio" },
+  { href: "/admin/products", label: "Products", icon: "Package" },
+  { href: "/admin/device-types", label: "Device Types", icon: "Factory" },
+  { href: "/admin/inventory", label: "Inventory", icon: "Boxes" },
+  { href: "/admin/firmware", label: "Firmware OTA", icon: "Cpu" },
+  { href: "/admin/tenants", label: "Tenants", icon: "Users" },
+  { href: "/admin/orders", label: "Orders", icon: "ShoppingCart" },
+  { href: "/admin/payments", label: "Payments", icon: "CreditCard" },
+  { href: "/admin/alerts", label: "Alerts", icon: "Bell" },
+  { href: "/admin/audit-logs", label: "Audit Logs", icon: "Shield" },
+  { href: "/admin/reports", label: "Reports", icon: "BarChart3" },
+];
+
+const adminBottomNavItems: NavItem[] = [
+  { href: "/admin/settings", label: "Settings", icon: "Settings" },
+];
+
+const portalNavItems: NavItem[] = [
+  { href: "/portal", label: "Dashboard", icon: "LayoutDashboard", exact: true },
+  { href: "/portal/devices", label: "Devices", icon: "Cpu" },
+  { href: "/portal/sites", label: "Sites", icon: "Building2" },
+  { href: "/portal/alerts", label: "Alerts", icon: "Bell" },
+  { href: "/portal/alert-rules", label: "Alert Rules", icon: "AlertTriangle" },
+  { href: "/portal/subscriptions", label: "Subscriptions", icon: "CreditCard" },
+  { href: "/portal/billing", label: "Billing", icon: "FileText" },
+  { href: "/portal/reports", label: "Reports", icon: "BarChart3" },
+  { href: "/portal/team", label: "Team", icon: "Users" },
+  { href: "/portal/api-keys", label: "API Keys", icon: "Key" },
+];
+
+const portalBottomNavItems: NavItem[] = [
+  { href: "/portal/settings", label: "Settings", icon: "Settings" },
+];
+
 export function DarkSidebar({ 
   brandName, 
-  navItems, 
-  bottomNavItems = [],
   userType 
 }: DarkSidebarProps) {
   const pathname = usePathname();
+
+  const navItems = userType === "admin" ? adminNavItems : portalNavItems;
+  const bottomNavItems = userType === "admin" ? adminBottomNavItems : portalBottomNavItems;
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) {
@@ -64,7 +111,7 @@ export function DarkSidebar({
       <nav className="flex-1 px-4 py-2 overflow-y-auto">
         <ul className="space-y-1">
           {navItems.map((item) => {
-            const Icon = item.icon;
+            const Icon = iconMap[item.icon] || Home;
             const active = isActive(item.href, item.exact);
             return (
               <li key={item.href}>
@@ -91,7 +138,7 @@ export function DarkSidebar({
         <div className="px-4 py-4 border-t border-white/10">
           <ul className="space-y-1">
             {bottomNavItems.map((item) => {
-              const Icon = item.icon;
+              const Icon = iconMap[item.icon] || Settings;
               const active = isActive(item.href);
               return (
                 <li key={item.href}>

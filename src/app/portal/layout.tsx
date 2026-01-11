@@ -1,31 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { 
-  LayoutDashboard, Cpu, MapPin, Bell, CreditCard, 
-  Settings, HelpCircle, FileText, Zap, Users, Key, BarChart3, AlertTriangle
-} from "lucide-react";
 import { DarkSidebar } from "@/components/layout/DarkSidebar";
 import { LightNavbar } from "@/components/layout/LightNavbar";
-
-const navItems = [
-  { href: "/portal", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/portal/devices", label: "Devices", icon: Cpu },
-  { href: "/portal/sites", label: "Sites", icon: MapPin },
-  { href: "/portal/alerts", label: "Alerts", icon: Bell },
-  { href: "/portal/alert-rules", label: "Alert Rules", icon: AlertTriangle },
-  { href: "/portal/reports", label: "Reports", icon: BarChart3 },
-  { href: "/portal/subscriptions", label: "Subscriptions", icon: Zap },
-  { href: "/portal/billing", label: "Billing", icon: CreditCard },
-  { href: "/portal/team", label: "Team", icon: Users },
-  { href: "/portal/api-keys", label: "API Keys", icon: Key },
-];
-
-const bottomNavItems = [
-  { href: "/portal/settings", label: "Settings", icon: Settings },
-  { href: "/portal/docs", label: "Documentation", icon: FileText },
-  { href: "/portal/support", label: "Help & Support", icon: HelpCircle },
-];
 
 export default async function PortalLayout({
   children,
@@ -66,8 +43,6 @@ export default async function PortalLayout({
       {/* Dark Sidebar */}
       <DarkSidebar
         brandName="Mechatronics"
-        navItems={navItems}
-        bottomNavItems={bottomNavItems}
         userType="portal"
       />
 
