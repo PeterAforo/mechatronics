@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
   const userType = token?.userType as string | undefined;
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/products", "/order", "/icon.svg", "/about", "/contact", "/faq", "/terms", "/privacy"];
+  const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/products", "/order", "/icon.svg", "/about", "/contact", "/faq", "/terms", "/privacy"];
   const isPublicRoute = publicRoutes.some(route => 
     nextUrl.pathname === route || nextUrl.pathname.startsWith("/products/")
   );

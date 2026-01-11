@@ -871,3 +871,46 @@ enum OtaStatus {
   completed
   failed
 }
+
+// ============== NEWSLETTER ==============
+
+model NewsletterSubscriber {
+  id            BigInt    @id @default(autoincrement()) @map("subscriber_id")
+  email         String    @unique @db.VarChar(200)
+  name          String?   @db.VarChar(200)
+  isActive      Boolean   @default(true) @map("is_active")
+  subscribedAt  DateTime  @default(now()) @map("subscribed_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+
+  @@index([isActive])
+  @@map("newsletter_subscribers")
+}
+
+// ============== PASSWORD RESET ==============
+
+model PasswordResetToken {
+  id          BigInt    @id @default(autoincrement()) @map("token_id")
+  email       String    @db.VarChar(200)
+  token       String    @unique @db.VarChar(100)
+  userType    UserType  @map("user_type")
+  expiresAt   DateTime  @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([token])
+  @@map("password_reset_tokens")
+}
+
+// ============== SYSTEM SETTINGS ==============
+
+model SystemSetting {
+  id        BigInt   @id @default(autoincrement()) @map("setting_id")
+  key       String   @unique @db.VarChar(100)
+  value     String   @db.Text
+  category  String   @default("general") @db.VarChar(50)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("system_settings")
+}

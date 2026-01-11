@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import paystack from "@/lib/paystack";
+import { sendEmail, emailTemplates } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -139,6 +140,33 @@ async function handleChargeSuccess(data: {
       }
 
       console.log(`Order ${order.orderRef} paid and processed`);
+
+      // Send order confirmation email
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: order.tenantId },
+      });
+
+      if (tenant) {
+        const items = order.items.map((item) => ({
+          name: item.product.name,
+          quantity: item.quantity,
+          price: `${order.currency} ${Number(item.lineTotal).toFixed(2)}`,
+        }));
+        const total = `${order.currency} ${Number(order.total).toFixed(2)}`;
+        const template = emailTemplates.orderConfirmation(
+          order.orderRef,
+          items,
+          total,
+          tenant.contactName || tenant.companyName
+        );
+
+        sendEmail({
+          to: tenant.email,
+          subject: template.subject,
+          html: template.html,
+          text: template.text,
+        }).catch(console.error);
+      }
     }
   }
 }

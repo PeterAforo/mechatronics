@@ -19,9 +19,19 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      // In a real app, this would call an API to send a password reset email
-      // For now, we'll just simulate the process
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, userType: "tenant" }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Something went wrong");
+        return;
+      }
+
       setSubmitted(true);
       toast.success("Password reset email sent!");
     } catch {

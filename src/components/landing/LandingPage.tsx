@@ -81,10 +81,24 @@ export default function LandingPage({ products }: { products: Product[] }) {
     e.preventDefault();
     if (!email) return;
     setSubscribing(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success("Thanks for subscribing! We'll keep you updated.");
-    setEmail("");
-    setSubscribing(false);
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || "Thanks for subscribing!");
+        setEmail("");
+      } else {
+        toast.error(data.error || "Failed to subscribe");
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setSubscribing(false);
+    }
   };
 
   useEffect(() => {

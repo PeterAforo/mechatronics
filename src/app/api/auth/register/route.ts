@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
+import { sendEmail, emailTemplates } from "@/lib/email";
 
 const registerSchema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters"),
@@ -95,6 +96,17 @@ export async function POST(request: NextRequest) {
 
       return { tenant, user };
     });
+
+    // Send welcome email (async, don't block response)
+    const baseUrl = process.env.NEXTAUTH_URL || "https://mechatronics.com.gh";
+    const loginUrl = `${baseUrl}/login`;
+    const template = emailTemplates.welcomeEmail(contactName, loginUrl);
+    sendEmail({
+      to: email,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    }).catch(console.error);
 
     return NextResponse.json(
       {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { Settings, Bell, Shield, Database, Loader2 } from "lucide-react";
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [settings, setSettings] = useState({
     siteName: "Mechatronics",
     supportEmail: "support@mechatronics.com",
@@ -18,13 +19,73 @@ export default function SettingsPage() {
     defaultCurrency: "GHS",
   });
 
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.general) {
+          setSettings((prev) => ({
+            ...prev,
+            siteName: data.general.siteName || prev.siteName,
+            supportEmail: data.general.supportEmail || prev.supportEmail,
+            defaultCurrency: data.general.defaultCurrency || prev.defaultCurrency,
+          }));
+        }
+        if (data.notifications) {
+          setSettings((prev) => ({
+            ...prev,
+            enableNotifications: data.notifications.enableNotifications === "true",
+          }));
+        }
+        if (data.system) {
+          setSettings((prev) => ({
+            ...prev,
+            enableMaintenanceMode: data.system.enableMaintenanceMode === "true",
+          }));
+        }
+      })
+      .catch(console.error)
+      .finally(() => setIsFetching(false));
+  }, []);
+
   const handleSave = async () => {
     setIsLoading(true);
-    // Simulate save
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success("Settings saved successfully");
-    setIsLoading(false);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          settings: {
+            siteName: settings.siteName,
+            supportEmail: settings.supportEmail,
+            defaultCurrency: settings.defaultCurrency,
+            enableNotifications: settings.enableNotifications,
+            enableMaintenanceMode: settings.enableMaintenanceMode,
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save");
+      }
+
+      toast.success("Settings saved successfully");
+    } catch {
+      toast.error("Failed to save settings");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isFetching) {
+    return (
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
