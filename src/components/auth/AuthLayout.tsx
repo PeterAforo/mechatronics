@@ -102,8 +102,8 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   }, []);
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Form Container (30%) */}
+    <div className="min-h-screen flex flex-row-reverse">
+      {/* Right Side - Form Container (30%) */}
       <div className="w-full lg:w-[30%] min-h-screen flex flex-col bg-white relative z-10">
         {/* Logo */}
         <div className="p-6 lg:p-8">
@@ -140,7 +140,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         </div>
       </div>
 
-      {/* Right Side - Hero Section (70%) */}
+      {/* Left Side - Hero Section (70%) */}
       <div 
         ref={heroRef}
         className="hidden lg:flex lg:w-[70%] relative overflow-hidden"
