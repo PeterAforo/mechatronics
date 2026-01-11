@@ -1,3 +1,5 @@
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +10,16 @@ import {
 } from "lucide-react";
 
 export default async function AdminPortalPage() {
+  const session = await auth();
+  
+  if (!session?.user) {
+    redirect("/login?type=admin");
+  }
+
+  if (session.user.userType !== "admin") {
+    redirect("/login?type=admin");
+  }
+
   // Get stats
   const [productCount, tenantCount, inventoryCount, orderCount, deviceTypeCount, subscriptionCount] = await Promise.all([
     prisma.deviceProduct.count(),
