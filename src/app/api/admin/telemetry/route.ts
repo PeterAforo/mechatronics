@@ -11,15 +11,19 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "50");
-  const deviceId = searchParams.get("deviceId");
+  const search = searchParams.get("search");
   const tenantId = searchParams.get("tenantId");
 
   const skip = (page - 1) * limit;
 
-  const where: Record<string, unknown> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = {};
   
-  if (deviceId) {
-    where.tenantDeviceId = BigInt(deviceId);
+  if (search) {
+    where.OR = [
+      { fromAddress: { contains: search, mode: "insensitive" } },
+      { rawText: { contains: search, mode: "insensitive" } },
+    ];
   }
   
   if (tenantId) {

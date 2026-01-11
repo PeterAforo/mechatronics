@@ -3,7 +3,8 @@ import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Building2, Mail, Phone, MapPin, Calendar, Users } from "lucide-react";
+import { ArrowLeft, Building2, Mail, Phone, MapPin, Calendar, Users, Cpu, Copy, Link2 } from "lucide-react";
+import { CopyButton } from "@/components/ui/copy-button";
 
 export default async function TenantDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -121,6 +122,74 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
             ) : (
               <p className="text-gray-500">No users found</p>
             )}
+          </div>
+
+          {/* Device Telemetry Links */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Link2 className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Device Telemetry Links</h2>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              Use these URLs to configure devices to send telemetry data to the platform.
+            </p>
+            {devices.length > 0 ? (
+              <div className="space-y-4">
+                {devices.map((device) => {
+                  const telemetryUrl = `https://www.mechatronics.com.gh/api/ingest?tenant_id=${tenant.id}&device_id=${device.id}`;
+                  return (
+                    <div key={device.id.toString()} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Cpu className="h-4 w-4 text-gray-500" />
+                          <span className="font-medium text-gray-900">{device.nickname || `Device ${device.id}`}</span>
+                        </div>
+                        <Badge variant="outline" className={device.status === "active" ? "border-green-200 bg-green-50 text-green-700" : "border-gray-200"}>
+                          {device.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 text-xs font-mono bg-white px-3 py-2 rounded border border-gray-200 overflow-x-auto">
+                          {telemetryUrl}
+                        </code>
+                        <CopyButton text={telemetryUrl} />
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500">
+                        <span className="font-medium">Parameters:</span> tenant_id={tenant.id.toString()}, device_id={device.id.toString()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Cpu className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <p>No devices assigned to this tenant</p>
+                <p className="text-sm mt-1">Devices will appear here after purchase and assignment</p>
+              </div>
+            )}
+
+            {/* General Telemetry Endpoint Info */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+              <h3 className="font-medium text-blue-900 mb-2">API Endpoint Information</h3>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-blue-700 font-medium">Base URL:</span>
+                  <code className="ml-2 bg-white px-2 py-1 rounded text-blue-800">https://www.mechatronics.com.gh/api/ingest</code>
+                </div>
+                <div>
+                  <span className="text-blue-700 font-medium">Method:</span>
+                  <code className="ml-2 bg-white px-2 py-1 rounded text-blue-800">POST</code>
+                </div>
+                <div className="text-blue-700">
+                  <span className="font-medium">Required Parameters:</span>
+                  <ul className="mt-1 ml-4 list-disc">
+                    <li><code className="bg-white px-1 rounded">tenant_id</code> — Tenant ID: {tenant.id.toString()}</li>
+                    <li><code className="bg-white px-1 rounded">device_id</code> — Device ID (from list above)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

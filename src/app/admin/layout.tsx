@@ -4,7 +4,7 @@ import Link from "next/link";
 import { 
   Package, Users, Factory, ShoppingCart,
   Settings, Boxes, BarChart3, Home, LogOut, Upload, Cpu,
-  Bell, Shield, FileText, CreditCard, Radio
+  Bell, Shield, FileText, CreditCard, Radio, MessageSquare, User
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 
@@ -73,13 +73,6 @@ export default async function AdminLayout({
               <Settings className="h-5 w-5" />
               <span className="font-medium">Settings</span>
             </Link>
-            <div className="flex items-center gap-3 px-3 py-2.5">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{session.user.name || "Admin"}</p>
-                <p className="text-xs text-gray-500 truncate">{session.user.email}</p>
-              </div>
-              <LogoutButton />
-            </div>
           </div>
         </div>
       </aside>
@@ -91,18 +84,56 @@ export default async function AdminLayout({
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-semibold text-gray-900">Admin Dashboard</h1>
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/admin/settings" className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+          <div className="flex items-center gap-2">
+            {/* Notifications */}
+            <Link 
+              href="/admin/alerts" 
+              className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+              title="Notifications"
+            >
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </Link>
+            
+            {/* Messages */}
+            <button 
+              className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+              title="Messages"
+            >
+              <MessageSquare className="h-5 w-5" />
+            </button>
+            
+            {/* Settings */}
+            <Link 
+              href="/admin/settings" 
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+              title="Settings"
+            >
               <Settings className="h-5 w-5" />
             </Link>
-            <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
+
+            {/* Divider */}
+            <div className="h-8 w-px bg-gray-200 mx-2"></div>
+            
+            {/* Profile Dropdown */}
+            <Link 
+              href="/admin/settings" 
+              className="flex items-center gap-2 p-1.5 hover:bg-gray-100 rounded-lg"
+              title="Profile"
+            >
               <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
                 <span className="text-sm font-medium text-indigo-600">
                   {session.user.name?.charAt(0) || "A"}
                 </span>
               </div>
-              <span className="text-sm font-medium text-gray-700">{session.user.name || "Admin"}</span>
-            </div>
+              <div className="hidden md:block text-left">
+                <p className="text-sm font-medium text-gray-700">{session.user.name || "Admin"}</p>
+                <p className="text-xs text-gray-500">{session.user.email}</p>
+              </div>
+            </Link>
+            
+            {/* Logout */}
+            <LogoutButton />
           </div>
         </header>
         {children}

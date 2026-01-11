@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
   Radio, RefreshCw, Search, ChevronLeft, ChevronRight, 
-  Activity, Clock, Building2, Cpu
+  Activity, Clock, Building2, Cpu, X, Eye
 } from "lucide-react";
 
 interface TelemetryMessage {
@@ -40,14 +40,15 @@ export default function TelemetryPage() {
     totalPages: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [searchDevice, setSearchDevice] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<TelemetryMessage | null>(null);
 
   const fetchMessages = async (page = 1) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: page.toString(), limit: "50" });
-      if (searchDevice) params.set("deviceId", searchDevice);
+      if (searchQuery) params.set("search", searchQuery);
 
       const res = await fetch(`/api/admin/telemetry?${params}`);
       const data = await res.json();
@@ -111,9 +112,9 @@ export default function TelemetryPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search by device ID..."
-              value={searchDevice}
-              onChange={(e) => setSearchDevice(e.target.value)}
+              placeholder="Search by address or message content..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -187,6 +188,7 @@ export default function TelemetryPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Message</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -222,11 +224,20 @@ export default function TelemetryPage() {
                         {msg.rawPayload}
                       </code>
                     </td>
+                    <td className="px-4 py-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedMessage(msg)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                     {loading ? "Loading..." : "No telemetry messages found"}
                   </td>
                 </tr>
@@ -263,6 +274,77 @@ export default function TelemetryPage() {
           </div>
         )}
       </div>
+
+      {/* Details Modal */}
+      {selectedMessage && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Message Details</h2>
+              <button
+                onClick={() => setSelectedMessage(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)] space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Message ID</p>
+                  <p className="font-mono text-sm">{selectedMessage.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Received At</p>
+                  <p className="text-sm">{new Date(selectedMessage.receivedAt).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Source</p>
+                  <p className="text-sm capitalize">{selectedMessage.source}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Status</p>
+                  <Badge variant="outline" className={statusColors[selectedMessage.status] || ""}>
+                    {selectedMessage.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">From Address</p>
+                  <p className="font-mono text-sm">{selectedMessage.fromAddress || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Tenant Device ID</p>
+                  <p className="font-mono text-sm">{selectedMessage.tenantDeviceId || "—"}</p>
+                </div>
+                {selectedMessage.tenantName && (
+                  <>
+                    <div>
+                      <p className="text-sm text-gray-500">Tenant</p>
+                      <p className="text-sm">{selectedMessage.tenantName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Tenant Code</p>
+                      <p className="font-mono text-sm">{selectedMessage.tenantCode}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+              {selectedMessage.parseError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-700 font-medium">Parse Error</p>
+                  <p className="text-sm text-red-600 mt-1">{selectedMessage.parseError}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Raw Message</p>
+                <pre className="bg-gray-100 rounded-lg p-4 text-sm font-mono whitespace-pre-wrap break-all">
+                  {selectedMessage.rawPayload}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
