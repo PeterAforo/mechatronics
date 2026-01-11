@@ -1,13 +1,11 @@
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Package, Users, Factory, ShoppingCart,
-  Plus, Boxes, ChevronRight, BarChart3, TrendingUp, TrendingDown,
-  DollarSign, Activity, Lightbulb, Sparkles
+  ChevronRight, ChevronLeft, Star, Droplets, Zap, Thermometer,
+  TrendingUp, Clock, CheckCircle2, AlertCircle
 } from "lucide-react";
-import { AdminDashboardCharts } from "@/components/dashboard/AdminDashboardCharts";
 
 export default async function AdminPortalPage() {
   // Get stats
@@ -20,46 +18,16 @@ export default async function AdminPortalPage() {
     prisma.subscription.count({ where: { status: "active" } }),
   ]);
 
-  // Get financial stats
-  const paidOrders = await prisma.order.findMany({
-    where: { status: "paid" },
-    select: { total: true, currency: true, createdAt: true },
+  // Get products for display
+  const products = await prisma.deviceProduct.findMany({
+    take: 3,
+    orderBy: { createdAt: "desc" },
   });
-
-  const totalRevenue = paidOrders.reduce((sum, order) => sum + Number(order.total), 0);
-  const thisMonthRevenue = paidOrders
-    .filter(o => new Date(o.createdAt).getMonth() === new Date().getMonth())
-    .reduce((sum, order) => sum + Number(order.total), 0);
-
-  // Get monthly revenue data for chart
-  const monthlyRevenue = Array.from({ length: 6 }, (_, i) => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - (5 - i));
-    const month = date.toLocaleString("default", { month: "short" });
-    const revenue = paidOrders
-      .filter(o => {
-        const orderDate = new Date(o.createdAt);
-        return orderDate.getMonth() === date.getMonth() && orderDate.getFullYear() === date.getFullYear();
-      })
-      .reduce((sum, order) => sum + Number(order.total), 0);
-    return { month, revenue };
-  });
-
-  // Get subscription data for chart
-  const subscriptionsByStatus = await prisma.subscription.groupBy({
-    by: ["status"],
-    _count: { status: true },
-  });
-
-  const subscriptionData = subscriptionsByStatus.map(s => ({
-    name: s.status.charAt(0).toUpperCase() + s.status.slice(1),
-    value: s._count.status,
-  }));
 
   // Get recent orders
   const recentOrders = await prisma.order.findMany({
     orderBy: { createdAt: "desc" },
-    take: 5,
+    take: 4,
     include: {
       items: {
         include: { product: true },
@@ -67,323 +35,318 @@ export default async function AdminPortalPage() {
     },
   });
 
-  // AI Insights (simulated based on data)
-  const insights = generateInsights(tenantCount, subscriptionCount, totalRevenue, thisMonthRevenue, inventoryCount);
+  // Get recent tenants
+  const recentTenants = await prisma.tenant.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 4,
+  });
+
+  // Weekly activity data (simulated)
+  const weeklyActivity = [
+    { day: "Sun", value: 20 },
+    { day: "Mon", value: 45 },
+    { day: "Tue", value: 35 },
+    { day: "Wed", value: 60 },
+    { day: "Thu", value: 50 },
+    { day: "Fri", value: 75 },
+    { day: "Sat", value: 40 },
+  ];
+
+  // Daily tasks
+  const dailyTasks = [
+    { id: 1, title: "Device Provisioning", count: inventoryCount, icon: "device", color: "purple" },
+    { id: 2, title: "Tenant Onboarding", count: tenantCount, icon: "users", color: "blue" },
+    { id: 3, title: "Order Processing", count: orderCount, icon: "orders", color: "green" },
+    { id: 4, title: "Subscription Management", count: subscriptionCount, icon: "subscription", color: "orange" },
+  ];
+
+  // Calendar data
+  const today = new Date();
+  const currentMonth = today.toLocaleString("default", { month: "long", year: "numeric" });
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+
+  // Active tasks/alerts
+  const activeTasks = [
+    { id: 1, title: "Firmware Updates", subtitle: `${deviceTypeCount} device types`, status: "in_progress" },
+    { id: 2, title: "Inventory Check", subtitle: `${inventoryCount} units`, status: "in_progress" },
+    { id: 3, title: "Order Fulfillment", subtitle: `${orderCount} orders`, status: "in_progress" },
+  ];
+
+  const categoryIcons: Record<string, React.ReactNode> = {
+    water: <Droplets className="h-5 w-5 text-blue-500" />,
+    power: <Zap className="h-5 w-5 text-yellow-500" />,
+    environment: <Thermometer className="h-5 w-5 text-red-500" />,
+  };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Manage your IoT platform</p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <Link href="/admin/products" className="bg-white rounded-xl p-5 border border-gray-200 hover:border-gray-300 transition-colors">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Products</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{productCount}</p>
-              </div>
-              <div className="p-2.5 bg-blue-50 rounded-lg">
-                <Package className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </Link>
-          <Link href="/admin/device-types" className="bg-white rounded-xl p-5 border border-gray-200 hover:border-gray-300 transition-colors">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Device Types</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{deviceTypeCount}</p>
-              </div>
-              <div className="p-2.5 bg-purple-50 rounded-lg">
-                <Factory className="h-5 w-5 text-purple-600" />
-              </div>
-            </div>
-          </Link>
-          <Link href="/admin/inventory" className="bg-white rounded-xl p-5 border border-gray-200 hover:border-gray-300 transition-colors">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Inventory</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{inventoryCount}</p>
-              </div>
-              <div className="p-2.5 bg-green-50 rounded-lg">
-                <Boxes className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </Link>
-          <Link href="/admin/tenants" className="bg-white rounded-xl p-5 border border-gray-200 hover:border-gray-300 transition-colors">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Tenants</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{tenantCount}</p>
-              </div>
-              <div className="p-2.5 bg-orange-50 rounded-lg">
-                <Users className="h-5 w-5 text-orange-600" />
-              </div>
-            </div>
-          </Link>
-          <Link href="/admin/orders" className="bg-white rounded-xl p-5 border border-gray-200 hover:border-gray-300 transition-colors">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Orders</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{orderCount}</p>
-              </div>
-              <div className="p-2.5 bg-yellow-50 rounded-lg">
-                <ShoppingCart className="h-5 w-5 text-yellow-600" />
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href="/admin/products/new" className="bg-white rounded-xl p-4 border border-gray-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors flex items-center gap-3">
-              <div className="p-2.5 bg-indigo-50 rounded-lg">
-                <Plus className="h-5 w-5 text-indigo-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Add Product</p>
-                <p className="text-xs text-gray-500">New listing</p>
-              </div>
-            </Link>
-            <Link href="/admin/inventory/new" className="bg-white rounded-xl p-4 border border-gray-200 hover:border-green-400 hover:bg-green-50/30 transition-colors flex items-center gap-3">
-              <div className="p-2.5 bg-green-50 rounded-lg">
-                <Boxes className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Add Inventory</p>
-                <p className="text-xs text-gray-500">New device</p>
-              </div>
-            </Link>
-            <Link href="/admin/device-types/new" className="bg-white rounded-xl p-4 border border-gray-200 hover:border-purple-400 hover:bg-purple-50/30 transition-colors flex items-center gap-3">
-              <div className="p-2.5 bg-purple-50 rounded-lg">
-                <Factory className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Add Device Type</p>
-                <p className="text-xs text-gray-500">New model</p>
-              </div>
-            </Link>
-            <Link href="/admin/reports" className="bg-white rounded-xl p-4 border border-gray-200 hover:border-blue-400 hover:bg-blue-50/30 transition-colors flex items-center gap-3">
-              <div className="p-2.5 bg-blue-50 rounded-lg">
-                <BarChart3 className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">View Reports</p>
-                <p className="text-xs text-gray-500">Analytics</p>
-              </div>
-            </Link>
-          </div>
-        </div>
-
-        {/* Financial Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+    <main className="p-6">
+      <div className="grid grid-cols-12 gap-6">
+        {/* Left Column - Main Content */}
+        <div className="col-span-12 lg:col-span-8 space-y-6">
+          {/* Products Section */}
+          <div>
             <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <DollarSign className="h-5 w-5" />
-              </div>
-              <TrendingUp className="h-5 w-5 opacity-80" />
-            </div>
-            <p className="text-green-100 text-sm">Total Revenue</p>
-            <p className="text-3xl font-bold mt-1">GHS {totalRevenue.toLocaleString()}</p>
-          </div>
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <Activity className="h-5 w-5" />
-              </div>
-              <span className="text-sm bg-white/20 px-2 py-1 rounded">This Month</span>
-            </div>
-            <p className="text-blue-100 text-sm">Monthly Revenue</p>
-            <p className="text-3xl font-bold mt-1">GHS {thisMonthRevenue.toLocaleString()}</p>
-          </div>
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <Users className="h-5 w-5" />
-              </div>
-              <Badge className="bg-white/20 text-white border-0">Active</Badge>
-            </div>
-            <p className="text-purple-100 text-sm">Active Subscriptions</p>
-            <p className="text-3xl font-bold mt-1">{subscriptionCount}</p>
-          </div>
-        </div>
-
-        {/* Charts */}
-        <AdminDashboardCharts 
-          monthlyRevenue={monthlyRevenue} 
-          subscriptionData={subscriptionData} 
-        />
-
-        {/* AI Insights */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100 p-6 mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <Sparkles className="h-5 w-5 text-indigo-600" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">AI Business Advisor</h2>
-              <p className="text-sm text-gray-500">Insights to grow your business</p>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {insights.map((insight, idx) => (
-              <div key={idx} className="bg-white rounded-lg p-4 border border-indigo-100">
-                <div className="flex items-start gap-3">
-                  <div className={`p-1.5 rounded ${insight.type === 'success' ? 'bg-green-100' : insight.type === 'warning' ? 'bg-yellow-100' : 'bg-blue-100'}`}>
-                    <Lightbulb className={`h-4 w-4 ${insight.type === 'success' ? 'text-green-600' : insight.type === 'warning' ? 'text-yellow-600' : 'text-blue-600'}`} />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">{insight.title}</p>
-                    <p className="text-xs text-gray-500 mt-1">{insight.description}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Orders */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
-            <Link href="/admin/orders">
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900">Latest Products</h2>
+              <Link href="/admin/products" className="text-purple-600 text-sm font-medium hover:text-purple-700">
                 View all
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </Link>
-          </div>
-          
-          {recentOrders.length > 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-              {recentOrders.map((order) => (
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {products.length > 0 ? products.map((product) => (
                 <Link 
-                  key={order.id.toString()} 
-                  href={`/admin/orders/${order.id}`}
-                  className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                  key={product.id.toString()} 
+                  href={`/admin/products/${product.id}`}
+                  className="bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-200"
                 >
-                  <div>
-                    <p className="font-medium text-gray-900">{order.orderRef}</p>
-                    <p className="text-sm text-gray-500">
-                      {order.items.length} item(s) • {new Date(order.createdAt).toLocaleDateString()}
-                    </p>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2.5 bg-purple-50 rounded-xl">
+                      {categoryIcons[product.category] || <Package className="h-5 w-5 text-purple-500" />}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">
-                        {order.currency} {Number(order.total).toFixed(2)}
-                      </p>
-                      <Badge 
-                        variant="outline"
-                        className={
-                          order.status === "paid" ? "border-green-200 bg-green-50 text-green-700" :
-                          order.status === "pending" ? "border-yellow-200 bg-yellow-50 text-yellow-700" :
-                          "border-gray-200 bg-gray-50 text-gray-600"
-                        }
-                      >
-                        {order.status}
-                      </Badge>
+                  <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
+                  <p className="text-sm text-gray-500 mb-3">{product.category}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                      <span className="text-sm font-medium text-gray-700">4.9</span>
+                    </div>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                      IoT Device
+                    </span>
+                  </div>
+                </Link>
+              )) : (
+                <div className="col-span-3 bg-white rounded-2xl p-8 border border-gray-100 text-center">
+                  <Package className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No products yet</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Activity & Tasks Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Hours Activity Chart */}
+            <div className="bg-white rounded-2xl p-5 border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Weekly Activity</h3>
+                  <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                    <TrendingUp className="h-3 w-3" />
+                    +9% increased from last week
+                  </p>
+                </div>
+                <select className="text-sm text-gray-500 bg-gray-50 border-0 rounded-lg px-2 py-1">
+                  <option>weekly</option>
+                  <option>monthly</option>
+                </select>
+              </div>
+              <div className="space-y-3">
+                {weeklyActivity.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <span className="text-xs text-gray-500 w-8">{item.day}</span>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-purple-600 rounded-full transition-all duration-500"
+                        style={{ width: `${item.value}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Daily Schedule */}
+            <div className="bg-white rounded-2xl p-5 border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Platform Overview</h3>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              </div>
+              <div className="space-y-3">
+                {dailyTasks.map((task) => (
+                  <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        task.color === "purple" ? "bg-purple-500" :
+                        task.color === "blue" ? "bg-blue-500" :
+                        task.color === "green" ? "bg-green-500" :
+                        "bg-orange-500"
+                      }`} />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                        <p className="text-xs text-gray-500">{task.count} items</p>
+                      </div>
                     </div>
                     <ChevronRight className="h-4 w-4 text-gray-400" />
                   </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Orders */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Recent Orders</h3>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Active
+                </Badge>
+                <Link href="/admin/orders" className="p-1 hover:bg-gray-100 rounded-lg">
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
                 </Link>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {recentOrders.length > 0 ? recentOrders.map((order) => (
+                <Link 
+                  key={order.id.toString()}
+                  href={`/admin/orders/${order.id}`}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${
+                      order.status === "paid" ? "bg-green-100" :
+                      order.status === "pending" ? "bg-yellow-100" :
+                      "bg-gray-100"
+                    }`}>
+                      <ShoppingCart className={`h-5 w-5 ${
+                        order.status === "paid" ? "text-green-600" :
+                        order.status === "pending" ? "text-yellow-600" :
+                        "text-gray-600"
+                      }`} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{order.orderRef}</p>
+                      <p className="text-xs text-gray-500">
+                        {order.items.map(i => i.product.name).join(", ")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">Amount</p>
+                    <p className="font-semibold text-gray-900">{order.currency} {Number(order.total).toFixed(0)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${
+                          order.status === "paid" ? "bg-green-500 w-full" :
+                          order.status === "pending" ? "bg-yellow-500 w-1/2" :
+                          "bg-gray-400 w-1/4"
+                        }`}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      {order.status === "paid" ? "100%" : order.status === "pending" ? "50%" : "25%"}
+                    </span>
+                  </div>
+                </Link>
+              )) : (
+                <div className="text-center py-8 text-gray-500">
+                  <ShoppingCart className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                  <p>No orders yet</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Sidebar Widgets */}
+        <div className="col-span-12 lg:col-span-4 space-y-6">
+          {/* Premium Card */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-medium text-gray-900">Mechatronics</span>
+              <div className="flex -space-x-2">
+                <div className="w-8 h-8 bg-purple-100 rounded-full border-2 border-white flex items-center justify-center">
+                  <Zap className="h-4 w-4 text-purple-600" />
+                </div>
+              </div>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Platform Stats</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Manage {tenantCount} tenants with {subscriptionCount} active subscriptions
+            </p>
+            <Link 
+              href="/admin/reports"
+              className="block w-full py-2.5 bg-purple-600 text-white text-center rounded-xl font-medium hover:bg-purple-700 transition-colors"
+            >
+              View Reports
+            </Link>
+          </div>
+
+          {/* Calendar */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <button className="p-1 hover:bg-gray-100 rounded-lg">
+                <ChevronLeft className="h-5 w-5 text-gray-400" />
+              </button>
+              <h3 className="font-semibold text-gray-900">{currentMonth}</h3>
+              <button className="p-1 hover:bg-gray-100 rounded-lg">
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1 text-center mb-2">
+              {["S", "M", "T", "W", "T", "F", "S"].map((day, idx) => (
+                <span key={idx} className="text-xs font-medium text-gray-400 py-2">{day}</span>
               ))}
             </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl mb-4">
-                <ShoppingCart className="h-6 w-6 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">No orders yet</h3>
-              <p className="text-gray-500">Orders will appear here when customers make purchases</p>
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {Array.from({ length: firstDayOfMonth }).map((_, idx) => (
+                <span key={`empty-${idx}`} className="text-sm py-2" />
+              ))}
+              {Array.from({ length: daysInMonth }).map((_, idx) => {
+                const day = idx + 1;
+                const isToday = day === today.getDate();
+                return (
+                  <span 
+                    key={day} 
+                    className={`text-sm py-2 rounded-lg cursor-pointer transition-colors ${
+                      isToday 
+                        ? "bg-purple-600 text-white font-medium" 
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {day}
+                  </span>
+                );
+              })}
             </div>
-          )}
+          </div>
+
+          {/* Active Tasks */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Active Tasks</h3>
+              <Link href="/admin/alerts" className="p-1 hover:bg-gray-100 rounded-lg">
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {activeTasks.map((task) => (
+                <div key={task.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl">
+                  <div className="p-2 bg-white rounded-lg shadow-sm">
+                    {task.status === "in_progress" ? (
+                      <Clock className="h-4 w-4 text-purple-600" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                    <p className="text-xs text-gray-500">{task.subtitle}</p>
+                  </div>
+                  <Badge className="bg-purple-100 text-purple-700 border-0 text-xs">
+                    In Progress
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </main>
+      </div>
+    </main>
   );
-}
-
-function generateInsights(
-  tenantCount: number,
-  subscriptionCount: number,
-  totalRevenue: number,
-  thisMonthRevenue: number,
-  inventoryCount: number
-) {
-  const insights: { title: string; description: string; type: "success" | "warning" | "info" }[] = [];
-
-  // Subscription conversion rate
-  if (tenantCount > 0) {
-    const conversionRate = (subscriptionCount / tenantCount) * 100;
-    if (conversionRate < 50) {
-      insights.push({
-        title: "Improve Conversion Rate",
-        description: `Only ${conversionRate.toFixed(0)}% of tenants have active subscriptions. Consider offering promotions or demos.`,
-        type: "warning",
-      });
-    } else {
-      insights.push({
-        title: "Strong Conversion",
-        description: `${conversionRate.toFixed(0)}% of tenants are subscribed. Keep up the great customer engagement!`,
-        type: "success",
-      });
-    }
-  }
-
-  // Revenue trend
-  if (thisMonthRevenue > 0) {
-    const avgMonthlyRevenue = totalRevenue / 6;
-    if (thisMonthRevenue > avgMonthlyRevenue) {
-      insights.push({
-        title: "Revenue Growing",
-        description: "This month's revenue is above your 6-month average. Great momentum!",
-        type: "success",
-      });
-    } else {
-      insights.push({
-        title: "Boost Revenue",
-        description: "Revenue is below average this month. Consider marketing campaigns or upselling.",
-        type: "info",
-      });
-    }
-  }
-
-  // Inventory management
-  if (inventoryCount < 10) {
-    insights.push({
-      title: "Low Inventory",
-      description: `Only ${inventoryCount} devices in stock. Consider restocking to meet demand.`,
-      type: "warning",
-    });
-  } else {
-    insights.push({
-      title: "Inventory Healthy",
-      description: `${inventoryCount} devices available. Well-stocked for upcoming orders.`,
-      type: "success",
-    });
-  }
-
-  // Growth opportunity
-  if (tenantCount < 50) {
-    insights.push({
-      title: "Growth Opportunity",
-      description: "Expand your reach with targeted marketing to businesses in your area.",
-      type: "info",
-    });
-  }
-
-  // Subscription retention
-  insights.push({
-    title: "Retention Focus",
-    description: "Send monthly usage reports to subscribers to demonstrate value and reduce churn.",
-    type: "info",
-  });
-
-  return insights.slice(0, 3);
 }
