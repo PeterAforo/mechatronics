@@ -6,18 +6,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Settings, Bell, Shield, Database, Loader2 } from "lucide-react";
+import { Settings, Bell, Shield, Database, Loader2, Mail, CreditCard, MessageSquare, Eye, EyeOff } from "lucide-react";
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [showApiKeys, setShowApiKeys] = useState<Record<string, boolean>>({});
   const [settings, setSettings] = useState({
     siteName: "Mechatronics",
     supportEmail: "support@mechatronics.com",
     enableNotifications: true,
     enableMaintenanceMode: false,
     defaultCurrency: "GHS",
+    // Email API
+    emailProvider: "resend",
+    resendApiKey: "",
+    emailFrom: "Mechatronics <noreply@mechatronics.com.gh>",
+    // Payment API
+    paymentProvider: "flutterwave",
+    flwPublicKey: "",
+    flwSecretKey: "",
+    flwEncryptionKey: "",
+    // SMS API
+    smsProvider: "mnotify",
+    mnotifyApiKey: "",
+    mnotifySenderId: "Mechatronics",
   });
+
+  const toggleShowKey = (key: string) => {
+    setShowApiKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   useEffect(() => {
     fetch("/api/admin/settings")
@@ -43,6 +61,31 @@ export default function SettingsPage() {
             enableMaintenanceMode: data.system.enableMaintenanceMode === "true",
           }));
         }
+        if (data.email) {
+          setSettings((prev) => ({
+            ...prev,
+            emailProvider: data.email.emailProvider || prev.emailProvider,
+            resendApiKey: data.email.resendApiKey || prev.resendApiKey,
+            emailFrom: data.email.emailFrom || prev.emailFrom,
+          }));
+        }
+        if (data.payment) {
+          setSettings((prev) => ({
+            ...prev,
+            paymentProvider: data.payment.paymentProvider || prev.paymentProvider,
+            flwPublicKey: data.payment.flwPublicKey || prev.flwPublicKey,
+            flwSecretKey: data.payment.flwSecretKey || prev.flwSecretKey,
+            flwEncryptionKey: data.payment.flwEncryptionKey || prev.flwEncryptionKey,
+          }));
+        }
+        if (data.sms) {
+          setSettings((prev) => ({
+            ...prev,
+            smsProvider: data.sms.smsProvider || prev.smsProvider,
+            mnotifyApiKey: data.sms.mnotifyApiKey || prev.mnotifyApiKey,
+            mnotifySenderId: data.sms.mnotifySenderId || prev.mnotifySenderId,
+          }));
+        }
       })
       .catch(console.error)
       .finally(() => setIsFetching(false));
@@ -61,6 +104,19 @@ export default function SettingsPage() {
             defaultCurrency: settings.defaultCurrency,
             enableNotifications: settings.enableNotifications,
             enableMaintenanceMode: settings.enableMaintenanceMode,
+            // Email API
+            emailProvider: settings.emailProvider,
+            resendApiKey: settings.resendApiKey,
+            emailFrom: settings.emailFrom,
+            // Payment API
+            paymentProvider: settings.paymentProvider,
+            flwPublicKey: settings.flwPublicKey,
+            flwSecretKey: settings.flwSecretKey,
+            flwEncryptionKey: settings.flwEncryptionKey,
+            // SMS API
+            smsProvider: settings.smsProvider,
+            mnotifyApiKey: settings.mnotifyApiKey,
+            mnotifySenderId: settings.mnotifySenderId,
           },
         }),
       });
@@ -182,6 +238,181 @@ export default function SettingsPage() {
               checked={settings.enableMaintenanceMode}
               onCheckedChange={(checked) => setSettings({ ...settings, enableMaintenanceMode: checked })}
             />
+          </div>
+        </div>
+
+        {/* Email API */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Mail className="h-5 w-5 text-gray-400" />
+            <h2 className="text-lg font-semibold text-gray-900">Email API</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="emailProvider">Provider</Label>
+              <Input
+                id="emailProvider"
+                value={settings.emailProvider}
+                onChange={(e) => setSettings({ ...settings, emailProvider: e.target.value })}
+                placeholder="resend"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="resendApiKey">Resend API Key</Label>
+              <div className="relative">
+                <Input
+                  id="resendApiKey"
+                  type={showApiKeys.resendApiKey ? "text" : "password"}
+                  value={settings.resendApiKey}
+                  onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
+                  placeholder="re_xxxxx"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleShowKey("resendApiKey")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showApiKeys.resendApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emailFrom">From Address</Label>
+              <Input
+                id="emailFrom"
+                value={settings.emailFrom}
+                onChange={(e) => setSettings({ ...settings, emailFrom: e.target.value })}
+                placeholder="Mechatronics <noreply@mechatronics.com.gh>"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Gateway API */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CreditCard className="h-5 w-5 text-gray-400" />
+            <h2 className="text-lg font-semibold text-gray-900">Payment Gateway API</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="paymentProvider">Provider</Label>
+              <Input
+                id="paymentProvider"
+                value={settings.paymentProvider}
+                onChange={(e) => setSettings({ ...settings, paymentProvider: e.target.value })}
+                placeholder="flutterwave"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="flwPublicKey">Flutterwave Public Key</Label>
+              <div className="relative">
+                <Input
+                  id="flwPublicKey"
+                  type={showApiKeys.flwPublicKey ? "text" : "password"}
+                  value={settings.flwPublicKey}
+                  onChange={(e) => setSettings({ ...settings, flwPublicKey: e.target.value })}
+                  placeholder="FLWPUBK-xxxxx"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleShowKey("flwPublicKey")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showApiKeys.flwPublicKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="flwSecretKey">Flutterwave Secret Key</Label>
+              <div className="relative">
+                <Input
+                  id="flwSecretKey"
+                  type={showApiKeys.flwSecretKey ? "text" : "password"}
+                  value={settings.flwSecretKey}
+                  onChange={(e) => setSettings({ ...settings, flwSecretKey: e.target.value })}
+                  placeholder="FLWSECK-xxxxx"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleShowKey("flwSecretKey")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showApiKeys.flwSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="flwEncryptionKey">Flutterwave Encryption Key</Label>
+              <div className="relative">
+                <Input
+                  id="flwEncryptionKey"
+                  type={showApiKeys.flwEncryptionKey ? "text" : "password"}
+                  value={settings.flwEncryptionKey}
+                  onChange={(e) => setSettings({ ...settings, flwEncryptionKey: e.target.value })}
+                  placeholder="xxxxx"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleShowKey("flwEncryptionKey")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showApiKeys.flwEncryptionKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SMS API */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare className="h-5 w-5 text-gray-400" />
+            <h2 className="text-lg font-semibold text-gray-900">SMS API</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="smsProvider">Provider</Label>
+              <Input
+                id="smsProvider"
+                value={settings.smsProvider}
+                onChange={(e) => setSettings({ ...settings, smsProvider: e.target.value })}
+                placeholder="mnotify"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mnotifyApiKey">mNotify API Key</Label>
+              <div className="relative">
+                <Input
+                  id="mnotifyApiKey"
+                  type={showApiKeys.mnotifyApiKey ? "text" : "password"}
+                  value={settings.mnotifyApiKey}
+                  onChange={(e) => setSettings({ ...settings, mnotifyApiKey: e.target.value })}
+                  placeholder="Your mNotify API key"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleShowKey("mnotifyApiKey")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showApiKeys.mnotifyApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mnotifySenderId">Sender ID</Label>
+              <Input
+                id="mnotifySenderId"
+                value={settings.mnotifySenderId}
+                onChange={(e) => setSettings({ ...settings, mnotifySenderId: e.target.value })}
+                placeholder="Mechatronics"
+              />
+            </div>
           </div>
         </div>
 

@@ -73,9 +73,17 @@ export async function POST(request: Request) {
 }
 
 function getCategoryForKey(key: string): string {
+  // Email API settings
+  if (key === "emailProvider" || key === "resendApiKey" || key === "emailFrom") return "email";
+  // Payment API settings
+  if (key === "paymentProvider" || key.startsWith("flw")) return "payment";
+  // SMS API settings
+  if (key === "smsProvider" || key.startsWith("mnotify")) return "sms";
+  // Legacy patterns
   if (key.startsWith("email_") || key.startsWith("smtp_")) return "email";
   if (key.startsWith("sms_") || key.startsWith("hubtel_")) return "sms";
   if (key.startsWith("payment_") || key.startsWith("paystack_")) return "payment";
-  if (key.startsWith("notification_")) return "notifications";
+  if (key.startsWith("notification_") || key === "enableNotifications") return "notifications";
+  if (key === "enableMaintenanceMode") return "system";
   return "general";
 }

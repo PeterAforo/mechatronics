@@ -4,12 +4,13 @@ import Link from "next/link";
 import { 
   Package, Users, Factory, ShoppingCart,
   Settings, Boxes, BarChart3, Home, LogOut, Upload, Cpu,
-  Bell, Shield, FileText, CreditCard
+  Bell, Shield, FileText, CreditCard, Radio
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: Home },
+  { href: "/admin/telemetry", label: "Telemetry", icon: Radio },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/device-types", label: "Device Types", icon: Factory },
   { href: "/admin/inventory", label: "Inventory", icon: Boxes },
