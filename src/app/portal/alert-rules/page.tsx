@@ -25,10 +25,18 @@ interface AlertRule {
   createdAt: string;
 }
 
+interface DeviceTypeVariable {
+  variableCode: string;
+  label: string;
+  unit: string | null;
+}
+
 interface DeviceType {
   id: string;
   typeCode: string;
   name: string;
+  category: string;
+  variables: DeviceTypeVariable[];
 }
 
 export default function AlertRulesPage() {
@@ -58,14 +66,15 @@ export default function AlertRulesPage() {
     try {
       const [rulesRes, typesRes] = await Promise.all([
         fetch("/api/portal/alert-rules"),
-        fetch("/api/admin/device-types"),
+        fetch("/api/portal/device-types"),
       ]);
       
       if (rulesRes.ok) {
         setRules(await rulesRes.json());
       }
       if (typesRes.ok) {
-        setDeviceTypes(await typesRes.json());
+        const types = await typesRes.json();
+        setDeviceTypes(types);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -73,6 +82,10 @@ export default function AlertRulesPage() {
       setLoading(false);
     }
   };
+
+  // Get variables for selected device type
+  const selectedDeviceType = deviceTypes.find(dt => dt.id === formData.deviceTypeId);
+  const availableVariables = selectedDeviceType?.variables || [];
 
   const handleSave = async () => {
     if (!formData.deviceTypeId || !formData.variableCode || !formData.ruleName || !formData.threshold1) {
@@ -240,12 +253,15 @@ export default function AlertRulesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Device Type *</Label>
-                  <Select value={formData.deviceTypeId} onValueChange={(v) => setFormData({ ...formData, deviceTypeId: v })}>
+                  <Select 
+                    value={formData.deviceTypeId} 
+                    onValueChange={(v) => setFormData({ ...formData, deviceTypeId: v, variableCode: "" })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {deviceTypes.map((dt) => (
+                      {deviceTypes.filter(dt => dt.id).map((dt) => (
                         <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -253,11 +269,22 @@ export default function AlertRulesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Variable Code *</Label>
-                  <Input
-                    value={formData.variableCode}
-                    onChange={(e) => setFormData({ ...formData, variableCode: e.target.value.toUpperCase() })}
-                    placeholder="e.g., WL, TEMP"
-                  />
+                  <Select 
+                    value={formData.variableCode} 
+                    onValueChange={(v) => setFormData({ ...formData, variableCode: v })}
+                    disabled={!formData.deviceTypeId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={formData.deviceTypeId ? "Select variable" : "Select device type first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableVariables.filter(v => v.variableCode).map((v) => (
+                        <SelectItem key={v.variableCode} value={v.variableCode}>
+                          {v.label} ({v.variableCode}){v.unit ? ` - ${v.unit}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
