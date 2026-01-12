@@ -1,17 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { gsap } from "gsap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   Droplets, Zap, Thermometer, Factory, Gauge, TrendingUp, TrendingDown,
   Wifi, WifiOff, RefreshCw, Sparkles, AlertTriangle, CheckCircle2, Info,
-  ArrowUp, ArrowDown, Minus
+  ArrowUp, ArrowDown, Minus, Activity
 } from "lucide-react";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -19,7 +18,15 @@ import {
   ResponsiveContainer,
   Area,
   AreaChart,
+  ReferenceLine,
 } from "recharts";
+import {
+  WaterTankSVG,
+  PowerMeterSVG,
+  TemperatureGaugeSVG,
+  GenericGaugeSVG,
+  DeviceHealthSVG,
+} from "@/components/devices/DeviceVisualizations";
 
 interface Variable {
   code: string;
@@ -342,6 +349,83 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
   const isOnline = data.device.lastSeenAt && 
     (new Date().getTime() - new Date(data.device.lastSeenAt).getTime()) < 5 * 60 * 1000;
   
+  // Calculate health score based on readings within range
+  const calculateHealthScore = () => {
+    if (data.variables.length === 0) return 100;
+    let inRangeCount = 0;
+    for (const variable of data.variables) {
+      const reading = data.latestReadings[variable.code];
+      if (!reading) continue;
+      const isInRange = (variable.minValue === null || reading.value >= variable.minValue) && 
+                        (variable.maxValue === null || reading.value <= variable.maxValue);
+      if (isInRange) inRangeCount++;
+    }
+    return Math.round((inRangeCount / data.variables.length) * 100);
+  };
+  const healthScore = calculateHealthScore();
+
+  // Get primary variable for visualization
+  const primaryVariable = data.variables[0];
+  const primaryReading = primaryVariable ? data.latestReadings[primaryVariable.code] : null;
+  const primaryStats = primaryVariable ? data.stats[primaryVariable.code] : null;
+
+  // Render device-specific visualization
+  const renderDeviceVisualization = () => {
+    if (!primaryVariable || !primaryReading) return null;
+    
+    const min = primaryVariable.minValue ?? (primaryStats?.min ?? 0);
+    const max = primaryVariable.maxValue ?? (primaryStats?.max ?? 100);
+    const isWarning = (primaryVariable.minValue !== null && primaryReading.value < primaryVariable.minValue) ||
+                      (primaryVariable.maxValue !== null && primaryReading.value > primaryVariable.maxValue);
+
+    switch (category) {
+      case "water":
+        return (
+          <WaterTankSVG
+            value={primaryReading.value}
+            min={min}
+            max={max}
+            unit={primaryVariable.unit || "%"}
+            label={primaryVariable.label}
+            isWarning={isWarning}
+          />
+        );
+      case "power":
+        return (
+          <PowerMeterSVG
+            value={primaryReading.value}
+            min={min}
+            max={max}
+            unit={primaryVariable.unit || "kW"}
+            label={primaryVariable.label}
+            isWarning={isWarning}
+          />
+        );
+      case "environment":
+        return (
+          <TemperatureGaugeSVG
+            value={primaryReading.value}
+            min={min}
+            max={max}
+            unit={primaryVariable.unit || "°C"}
+            label={primaryVariable.label}
+            isWarning={isWarning}
+          />
+        );
+      default:
+        return (
+          <GenericGaugeSVG
+            value={primaryReading.value}
+            min={min}
+            max={max}
+            unit={primaryVariable.unit || ""}
+            label={primaryVariable.label}
+            isWarning={isWarning}
+          />
+        );
+    }
+  };
+  
   return (
     <div className="space-y-6">
       {/* Status Bar */}
@@ -380,6 +464,63 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
           Refresh
         </Button>
       </div>
+
+      {/* Device Health & Visualization Section */}
+      {data.variables.length > 0 && (
+        <Card className="overflow-hidden">
+          <div className={`h-1 bg-gradient-to-r ${colors.gradient}`} />
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+              {/* Device Health */}
+              <div className="flex flex-col items-center">
+                <DeviceHealthSVG 
+                  healthScore={healthScore} 
+                  isOnline={!!isOnline}
+                  category={category}
+                />
+                <p className="text-sm font-medium text-gray-600 mt-2">Device Health</p>
+                <p className="text-xs text-gray-400">
+                  {healthScore >= 80 ? "Excellent" : healthScore >= 60 ? "Good" : "Needs Attention"}
+                </p>
+              </div>
+              
+              {/* Primary Visualization */}
+              <div className="flex justify-center">
+                {renderDeviceVisualization()}
+              </div>
+              
+              {/* Quick Stats */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <Activity className="h-5 w-5 text-purple-500" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{data.totalReadings}</p>
+                    <p className="text-xs text-gray-500">Readings (24h)</p>
+                  </div>
+                </div>
+                {primaryStats && (
+                  <>
+                    <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                      <TrendingUp className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{primaryStats.max.toFixed(1)} {primaryVariable?.unit}</p>
+                        <p className="text-xs text-gray-500">24h High</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                      <TrendingDown className="h-5 w-5 text-blue-500" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{primaryStats.min.toFixed(1)} {primaryVariable?.unit}</p>
+                        <p className="text-xs text-gray-500">24h Low</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       {/* Reading Cards */}
       {data.variables.length > 0 ? (
@@ -413,64 +554,134 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
         </Card>
       )}
       
-      {/* Chart */}
-      {selectedVariable && data.chartData[selectedVariable] && data.chartData[selectedVariable].length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">
-                {data.variables.find(v => v.code === selectedVariable)?.label || selectedVariable} Trend
-              </CardTitle>
-              <div className="flex gap-2">
-                {data.variables.map((v) => (
-                  <Button
-                    key={v.code}
-                    variant={selectedVariable === v.code ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedVariable(v.code)}
-                    className={selectedVariable === v.code ? `bg-gradient-to-r ${colors.gradient}` : ""}
-                  >
-                    {v.code}
-                  </Button>
-                ))}
+      {/* Chart with High/Low Indicators */}
+      {selectedVariable && data.chartData[selectedVariable] && data.chartData[selectedVariable].length > 0 && (() => {
+        const selectedVar = data.variables.find(v => v.code === selectedVariable);
+        const selectedStats = data.stats[selectedVariable];
+        const chartData = data.chartData[selectedVariable];
+        
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">
+                    {selectedVar?.label || selectedVariable} Trend
+                  </CardTitle>
+                  {selectedStats && (
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <span className="flex items-center gap-1 text-green-600">
+                        <ArrowUp className="h-3 w-3" />
+                        High: {selectedStats.max.toFixed(1)}{selectedVar?.unit || ""}
+                      </span>
+                      <span className="flex items-center gap-1 text-blue-600">
+                        <ArrowDown className="h-3 w-3" />
+                        Low: {selectedStats.min.toFixed(1)}{selectedVar?.unit || ""}
+                      </span>
+                      <span className="flex items-center gap-1 text-gray-500">
+                        <Minus className="h-3 w-3" />
+                        Avg: {selectedStats.avg.toFixed(1)}{selectedVar?.unit || ""}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {data.variables.map((v) => (
+                    <Button
+                      key={v.code}
+                      variant={selectedVariable === v.code ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedVariable(v.code)}
+                      className={selectedVariable === v.code ? `bg-gradient-to-r ${colors.gradient}` : ""}
+                    >
+                      {v.code}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.chartData[selectedVariable]}>
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={colors.primary} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={colors.primary} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="time" 
-                    tickFormatter={(t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    stroke="#9ca3af"
-                    fontSize={12}
-                  />
-                  <YAxis stroke="#9ca3af" fontSize={12} />
-                  <Tooltip 
-                    labelFormatter={(t) => new Date(t).toLocaleString()}
-                    contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke={colors.primary}
-                    strokeWidth={2}
-                    fill="url(#colorValue)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardHeader>
+            <CardContent>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={colors.primary} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={colors.primary} stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="time" 
+                      tickFormatter={(t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      stroke="#9ca3af"
+                      fontSize={12}
+                    />
+                    <YAxis stroke="#9ca3af" fontSize={12} />
+                    <Tooltip 
+                      labelFormatter={(t) => new Date(t).toLocaleString()}
+                      contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }}
+                      formatter={(value: number) => [`${value.toFixed(2)} ${selectedVar?.unit || ""}`, selectedVar?.label || "Value"]}
+                    />
+                    {/* High threshold line */}
+                    {selectedVar?.maxValue !== null && selectedVar?.maxValue !== undefined && (
+                      <ReferenceLine 
+                        y={selectedVar.maxValue} 
+                        stroke="#ef4444" 
+                        strokeDasharray="5 5"
+                        label={{ value: `Max: ${selectedVar.maxValue}`, position: "right", fill: "#ef4444", fontSize: 10 }}
+                      />
+                    )}
+                    {/* Low threshold line */}
+                    {selectedVar?.minValue !== null && selectedVar?.minValue !== undefined && (
+                      <ReferenceLine 
+                        y={selectedVar.minValue} 
+                        stroke="#3b82f6" 
+                        strokeDasharray="5 5"
+                        label={{ value: `Min: ${selectedVar.minValue}`, position: "right", fill: "#3b82f6", fontSize: 10 }}
+                      />
+                    )}
+                    {/* Average line */}
+                    {selectedStats && (
+                      <ReferenceLine 
+                        y={selectedStats.avg} 
+                        stroke="#9ca3af" 
+                        strokeDasharray="3 3"
+                        label={{ value: `Avg`, position: "left", fill: "#9ca3af", fontSize: 10 }}
+                      />
+                    )}
+                    <Area 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke={colors.primary}
+                      strokeWidth={2}
+                      fill="url(#colorValue)"
+                      animationDuration={1500}
+                      animationEasing="ease-out"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Chart Legend */}
+              <div className="flex items-center justify-center gap-6 mt-4 text-xs text-gray-500">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5 bg-red-500" style={{ borderStyle: "dashed" }} />
+                  <span>Max Threshold</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5 bg-blue-500" style={{ borderStyle: "dashed" }} />
+                  <span>Min Threshold</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5 bg-gray-400" style={{ borderStyle: "dashed" }} />
+                  <span>Average</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
       
       {/* AI Recommendations */}
       <Card>
