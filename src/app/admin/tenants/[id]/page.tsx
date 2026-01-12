@@ -149,8 +149,18 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
                 {devices.map((device) => {
                   const deviceType = device.inventory?.deviceType;
                   const variables = deviceType?.variables || [];
-                  const variableParams = variables.map(v => `${v.variableCode}={value}`).join("&");
-                  const telemetryUrl = `https://www.mechatronics.com.gh/api/ingest?tenant_id=${tenant.id}&device_id=${device.id}${variableParams ? `&${variableParams}` : ""}`;
+                  const serialNumber = device.inventory?.serialNumber || `DEV${device.id}`;
+                  
+                  // Build variable pairs in format VAR1:VAL1/VAR2:VAL2
+                  const variablePairs = variables.map(v => `${v.variableCode}:{value}`).join("/");
+                  const tempParam = variablePairs || "VAR:{value}";
+                  
+                  // Legacy telemetry URL format
+                  const telemetryUrl = `https://mechatronics.com.gh/api/ingest/legacy?temp=${tempParam}&hum=${deviceType?.typeCode || "CODE"}&CID=${tenant.id}&DID=${serialNumber}`;
+                  
+                  // Example URL with sample values
+                  const exampleValues = variables.map(v => `${v.variableCode}:25.5`).join("/") || "WL:75.5";
+                  const exampleUrl = `https://mechatronics.com.gh/api/ingest/legacy?temp=${exampleValues}&hum=${deviceType?.typeCode || "CODE"}&CID=${tenant.id}&DID=${serialNumber}`;
                   
                   return (
                     <div key={device.id.toString()} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -169,14 +179,31 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
                         </Badge>
                       </div>
                       
-                      {/* Telemetry URL */}
+                      {/* Device Serial */}
+                      <div className="mb-3 flex items-center gap-2 text-sm">
+                        <span className="text-gray-500">Serial Number:</span>
+                        <code className="bg-white px-2 py-1 rounded border border-gray-200 font-mono text-gray-900">{serialNumber}</code>
+                      </div>
+                      
+                      {/* Telemetry URL Template */}
                       <div className="mb-3">
-                        <p className="text-xs text-gray-500 mb-1 font-medium">Telemetry URL:</p>
+                        <p className="text-xs text-gray-500 mb-1 font-medium">Telemetry URL Template:</p>
                         <div className="flex items-center gap-2">
                           <code className="flex-1 text-xs font-mono bg-white px-3 py-2 rounded border border-gray-200 overflow-x-auto whitespace-nowrap">
                             {telemetryUrl}
                           </code>
                           <CopyButton text={telemetryUrl} />
+                        </div>
+                      </div>
+                      
+                      {/* Example URL */}
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-500 mb-1 font-medium">Example URL (with sample values):</p>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 text-xs font-mono bg-green-50 px-3 py-2 rounded border border-green-200 text-green-800 overflow-x-auto whitespace-nowrap">
+                            {exampleUrl}
+                          </code>
+                          <CopyButton text={exampleUrl} />
                         </div>
                       </div>
                       
@@ -198,15 +225,12 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
                       
                       {/* Parameters Summary */}
                       <div className="mt-3 text-xs text-gray-500">
-                        <span className="font-medium">Required Parameters:</span>
+                        <span className="font-medium">URL Parameters:</span>
                         <ul className="mt-1 ml-4 list-disc">
-                          <li><code className="bg-gray-100 px-1 rounded">tenant_id</code> = {tenant.id.toString()}</li>
-                          <li><code className="bg-gray-100 px-1 rounded">device_id</code> = {device.id.toString()}</li>
-                          {variables.map((v) => (
-                            <li key={v.id.toString()}>
-                              <code className="bg-gray-100 px-1 rounded">{v.variableCode}</code> = {`{${v.label} value}`}
-                            </li>
-                          ))}
+                          <li><code className="bg-gray-100 px-1 rounded">temp</code> = Variable readings in format <code className="bg-gray-100 px-1 rounded">VAR1:VAL1/VAR2:VAL2</code></li>
+                          <li><code className="bg-gray-100 px-1 rounded">hum</code> = Device type code: <strong>{deviceType?.typeCode || "CODE"}</strong></li>
+                          <li><code className="bg-gray-100 px-1 rounded">CID</code> = Tenant ID: <strong>{tenant.id.toString()}</strong></li>
+                          <li><code className="bg-gray-100 px-1 rounded">DID</code> = Device Serial: <strong>{serialNumber}</strong></li>
                         </ul>
                       </div>
                     </div>
@@ -227,17 +251,27 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
               <div className="space-y-2 text-sm">
                 <div>
                   <span className="text-blue-700 font-medium">Base URL:</span>
-                  <code className="ml-2 bg-white px-2 py-1 rounded text-blue-800">https://www.mechatronics.com.gh/api/ingest</code>
+                  <code className="ml-2 bg-white px-2 py-1 rounded text-blue-800">https://mechatronics.com.gh/api/ingest/legacy</code>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Method:</span>
-                  <code className="ml-2 bg-white px-2 py-1 rounded text-blue-800">POST</code>
+                  <code className="ml-2 bg-white px-2 py-1 rounded text-blue-800">GET</code>
                 </div>
                 <div className="text-blue-700">
-                  <span className="font-medium">Required Parameters:</span>
-                  <ul className="mt-1 ml-4 list-disc">
-                    <li><code className="bg-white px-1 rounded">tenant_id</code> — Tenant ID: {tenant.id.toString()}</li>
-                    <li><code className="bg-white px-1 rounded">device_id</code> — Device ID (from list above)</li>
+                  <span className="font-medium">URL Format:</span>
+                  <div className="mt-1 bg-white p-2 rounded border border-blue-200">
+                    <code className="text-xs text-blue-800 break-all">
+                      https://mechatronics.com.gh/api/ingest/legacy?temp=VAR1:VAL1/VAR2:VAL2&hum=CODE&CID=TENANT_ID&DID=DEVICE_SERIAL
+                    </code>
+                  </div>
+                </div>
+                <div className="text-blue-700 mt-3">
+                  <span className="font-medium">Parameters:</span>
+                  <ul className="mt-1 ml-4 list-disc text-blue-600">
+                    <li><code className="bg-white px-1 rounded">temp</code> — Variable readings (format: VAR1:VALUE1/VAR2:VALUE2)</li>
+                    <li><code className="bg-white px-1 rounded">hum</code> — Device type code (e.g., WAT100, PWR100)</li>
+                    <li><code className="bg-white px-1 rounded">CID</code> — Tenant ID: <strong>{tenant.id.toString()}</strong></li>
+                    <li><code className="bg-white px-1 rounded">DID</code> — Device Serial Number</li>
                   </ul>
                 </div>
               </div>
