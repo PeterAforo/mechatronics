@@ -621,7 +621,7 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
                     <Tooltip 
                       labelFormatter={(t) => new Date(t).toLocaleString()}
                       contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }}
-                      formatter={(value: number) => [`${value.toFixed(2)} ${selectedVar?.unit || ""}`, selectedVar?.label || "Value"]}
+                      formatter={(value) => value !== undefined ? [`${Number(value).toFixed(2)} ${selectedVar?.unit || ""}`, selectedVar?.label || "Value"] : ["", ""]}
                     />
                     {/* High threshold line */}
                     {selectedVar?.maxValue !== null && selectedVar?.maxValue !== undefined && (
