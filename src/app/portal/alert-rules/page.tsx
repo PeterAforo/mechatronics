@@ -253,38 +253,54 @@ export default function AlertRulesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Device Type *</Label>
-                  <Select 
-                    value={formData.deviceTypeId} 
-                    onValueChange={(v) => setFormData({ ...formData, deviceTypeId: v, variableCode: "" })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {deviceTypes.filter(dt => dt.id).map((dt) => (
-                        <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {deviceTypes.filter(dt => dt.id && dt.id.toString().trim() !== "").length > 0 ? (
+                    <Select 
+                      value={formData.deviceTypeId} 
+                      onValueChange={(v) => setFormData({ ...formData, deviceTypeId: v, variableCode: "" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {deviceTypes
+                          .filter(dt => dt.id && dt.id.toString().trim() !== "")
+                          .map((dt) => (
+                            <SelectItem key={dt.id} value={dt.id.toString()}>{dt.name}</SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input value="" placeholder="No device types available" disabled />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Variable Code *</Label>
-                  <Select 
-                    value={formData.variableCode} 
-                    onValueChange={(v) => setFormData({ ...formData, variableCode: v })}
-                    disabled={!formData.deviceTypeId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={formData.deviceTypeId ? "Select variable" : "Select device type first"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableVariables.filter(v => v.variableCode).map((v) => (
-                        <SelectItem key={v.variableCode} value={v.variableCode}>
-                          {v.label} ({v.variableCode}){v.unit ? ` - ${v.unit}` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {formData.deviceTypeId && availableVariables.filter(v => v.variableCode && v.variableCode.toString().trim() !== "").length > 0 ? (
+                    <Select 
+                      value={formData.variableCode} 
+                      onValueChange={(v) => setFormData({ ...formData, variableCode: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select variable" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableVariables
+                          .filter(v => v.variableCode && v.variableCode.toString().trim() !== "")
+                          .map((v) => (
+                            <SelectItem key={v.variableCode} value={v.variableCode.toString()}>
+                              {v.label} ({v.variableCode}){v.unit ? ` - ${v.unit}` : ""}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      value={formData.variableCode}
+                      onChange={(e) => setFormData({ ...formData, variableCode: e.target.value.toUpperCase() })}
+                      placeholder={formData.deviceTypeId ? "e.g., WL, TEMP (no variables defined)" : "Select device type first"}
+                      disabled={!formData.deviceTypeId}
+                    />
+                  )}
                 </div>
               </div>
 
