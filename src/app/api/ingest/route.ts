@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
+import { getTelemetryTimestamp, formatAccraDate } from "@/lib/timezone";
 
 const ingestSchema = z.object({
   tenantDeviceId: z.string().optional(),
@@ -49,7 +50,7 @@ async function processIngest(
   });
 
   const telemetryRecords = [];
-  const now = new Date();
+  const now = getTelemetryTimestamp();
 
   try {
     // Insert telemetry_kv records
@@ -196,7 +197,7 @@ export async function POST(request: Request) {
       success: true,
       message: `Ingested ${result.telemetryRecords.length} readings`,
       messageId: result.message.id.toString(),
-      timestamp: new Date().toISOString(),
+      timestamp: formatAccraDate(new Date()),
     });
   } catch (error) {
     console.error("Error ingesting data:", error);
@@ -288,7 +289,7 @@ export async function GET(request: Request) {
       success: true,
       message: `Ingested ${result.telemetryRecords.length} readings`,
       messageId: result.message.id.toString(),
-      timestamp: new Date().toISOString(),
+      timestamp: formatAccraDate(new Date()),
     });
   } catch (error) {
     console.error("Error ingesting data:", error);

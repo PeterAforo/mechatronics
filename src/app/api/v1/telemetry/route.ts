@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { validateApiKey, hasScope, apiError, apiSuccess } from "@/lib/api-auth";
+import { getTelemetryTimestamp, parseAccraDate } from "@/lib/timezone";
 
 export async function GET(request: NextRequest) {
   const auth = await validateApiKey(request);
@@ -85,20 +86,22 @@ export async function POST(request: NextRequest) {
       return apiError("Device not found", 404);
     }
 
+    const now = getTelemetryTimestamp();
+    
     const created = await prisma.telemetryKv.createMany({
       data: readings.map((r: { variable: string; value: number; timestamp?: string }) => ({
         tenantId: auth.tenantId,
         tenantDeviceId: device.id,
         variableCode: r.variable,
         value: r.value,
-        capturedAt: r.timestamp ? new Date(r.timestamp) : new Date(),
+        capturedAt: r.timestamp ? parseAccraDate(r.timestamp) : now,
       })),
     });
 
-    // Update device last seen
+    // Update device last seen (Africa/Accra timezone)
     await prisma.tenantDevice.update({
       where: { id: device.id },
-      data: { lastSeenAt: new Date() },
+      data: { lastSeenAt: now },
     });
 
     return apiSuccess({ created: created.count }, 201);
