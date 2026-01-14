@@ -176,20 +176,20 @@ export default async function TenantPortalPage() {
   };
 
   return (
-    <main className="p-6">
+    <main className="p-4 md:p-6">
       {/* Welcome Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">
           Welcome back, {session.user.name?.split(" ")[0] || "User"}!
         </h1>
         <p className="text-gray-500 mt-1">Here&apos;s an overview of your IoT devices and subscriptions</p>
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
         {/* Left Column - Main Content */}
-        <div className="col-span-12 lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 space-y-4 md:space-y-6">
           {/* Active Subscriptions with Device Status */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-100">
+          <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Active Subscriptions</h2>
@@ -317,7 +317,7 @@ export default async function TenantPortalPage() {
 
           {/* All Devices Status Grid */}
           {devices.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
+            <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">Device Status</h2>
@@ -364,7 +364,7 @@ export default async function TenantPortalPage() {
         </div>
 
         {/* Right Column - AI Advisor & Alerts */}
-        <div className="col-span-12 lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-4 md:space-y-6">
           {/* AI Advisor Card */}
           <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl p-5 text-white">
             <div className="flex items-center gap-2 mb-4">

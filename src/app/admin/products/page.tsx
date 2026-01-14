@@ -12,9 +12,9 @@ export default async function ProductsPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Products</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Products</h1>
           <p className="text-gray-500 mt-1">Manage your product catalog</p>
         </div>
         <Link href="/admin/products/new">
@@ -31,9 +31,9 @@ export default async function ProductsPage() {
             <Link
               key={product.id.toString()}
               href={`/admin/products/${product.id}`}
-              className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-gray-50 transition-colors gap-3"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <div className="p-2.5 bg-blue-50 rounded-lg">
                   <Package className="h-5 w-5 text-blue-600" />
                 </div>
@@ -44,8 +44,8 @@ export default async function ProductsPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
+              <div className="flex items-center gap-3 sm:gap-4 ml-11 sm:ml-0">
+                <div className="text-left sm:text-right">
                   <p className="font-semibold text-gray-900">
                     {product.currency} {Number(product.setupFee).toFixed(2)}
                   </p>

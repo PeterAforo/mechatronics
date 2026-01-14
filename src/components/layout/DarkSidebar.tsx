@@ -8,8 +8,9 @@ import {
   Settings, Boxes, BarChart3, Home, Cpu,
   Bell, Shield, CreditCard, Radio,
   LayoutDashboard, Wifi, AlertTriangle, Building2,
-  Key, FileText, LucideIcon
+  Key, FileText, LucideIcon, Menu, X
 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface NavItem {
   href: string;
@@ -21,6 +22,8 @@ interface NavItem {
 interface DarkSidebarProps {
   brandName: string;
   userType: "admin" | "portal";
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
 const iconMap: Record<string, LucideIcon> = {
@@ -67,9 +70,12 @@ const portalBottomNavItems: NavItem[] = [
 
 export function DarkSidebar({ 
   brandName, 
-  userType 
+  userType,
+  isOpen = false,
+  onToggle
 }: DarkSidebarProps) {
   const pathname = usePathname();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navItems = userType === "admin" ? adminNavItems : portalNavItems;
   const bottomNavItems = userType === "admin" ? adminBottomNavItems : portalBottomNavItems;
@@ -83,8 +89,53 @@ export function DarkSidebar({
 
   const baseHref = userType === "admin" ? "/admin" : "/portal";
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
+
+  // Handle body scroll lock when mobile menu is open
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileOpen]);
+
+  const handleToggle = () => {
+    setIsMobileOpen(!isMobileOpen);
+    onToggle?.();
+  };
+
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-[#1a1a2e] flex flex-col">
+    <>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={handleToggle}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-[#1a1a2e] rounded-xl shadow-lg text-white hover:bg-[#252542] transition-colors"
+        aria-label="Toggle menu"
+      >
+        {isMobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+      </button>
+
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={cn(
+        "fixed left-0 top-0 z-40 h-screen w-64 bg-[#1a1a2e] flex flex-col transition-transform duration-300 ease-in-out",
+        "lg:translate-x-0",
+        isMobileOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
       {/* Logo Section */}
       <div className="h-20 flex items-center px-6">
         <Link href={baseHref} className="flex items-center gap-3">
@@ -161,8 +212,8 @@ export function DarkSidebar({
         </div>
       )}
 
-      {/* Mobile App Promo Card */}
-      <div className="px-4 pb-6">
+      {/* Mobile App Promo Card - Hidden on smaller screens to save space */}
+      <div className="px-4 pb-6 hidden sm:block">
         <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-2xl p-4 border border-purple-500/20">
           <div className="flex items-center justify-center mb-3">
             <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
@@ -190,5 +241,6 @@ export function DarkSidebar({
         </div>
       </div>
     </aside>
+    </>
   );
 }

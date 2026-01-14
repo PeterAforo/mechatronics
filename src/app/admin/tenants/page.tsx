@@ -17,9 +17,9 @@ export default async function TenantsPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Tenants</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Tenants</h1>
           <p className="text-gray-500 mt-1">Manage customer accounts</p>
         </div>
         <Link href="/admin/tenants/new">
@@ -36,9 +36,9 @@ export default async function TenantsPage() {
             <Link
               key={tenant.id.toString()}
               href={`/admin/tenants/${tenant.id}`}
-              className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-gray-50 transition-colors gap-3"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <div className="p-2.5 bg-orange-50 rounded-lg">
                   <Building2 className="h-5 w-5 text-orange-600" />
                 </div>
@@ -49,14 +49,14 @@ export default async function TenantsPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right text-sm text-gray-500">
+              <div className="flex items-center gap-3 sm:gap-4 ml-11 sm:ml-0">
+                <div className="text-left sm:text-right text-sm text-gray-500">
                   {tenant.city && `${tenant.city}, `}{tenant.country}
                 </div>
                 <Badge variant="outline" className={statusColors[tenant.status] || statusColors.pending}>
                   {tenant.status}
                 </Badge>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
+                <ChevronRight className="h-4 w-4 text-gray-400 hidden sm:block" />
               </div>
             </Link>
           ))}

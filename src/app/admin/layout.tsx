@@ -27,7 +27,7 @@ export default async function AdminLayout({
       />
 
       {/* Main Content */}
-      <div className="ml-64">
+      <div className="lg:ml-64">
         {/* Light Navbar */}
         <LightNavbar
           user={{

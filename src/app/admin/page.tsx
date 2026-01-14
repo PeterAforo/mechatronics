@@ -3,11 +3,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
-import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
+import { AdminDashboardCharts, AIAdvisor } from "@/components/dashboard/AdminDashboardCharts";
 import { 
-  Package, Users, Factory, ShoppingCart,
-  ChevronRight, Star, Droplets, Zap, Thermometer,
-  TrendingUp, Clock, CheckCircle2
+  ShoppingCart, ChevronRight, Clock, Wifi, WifiOff,
+  CheckCircle2, AlertTriangle, Package
 } from "lucide-react";
 
 export default async function AdminPortalPage() {
@@ -21,197 +20,165 @@ export default async function AdminPortalPage() {
     redirect("/login?type=admin");
   }
 
-  // Get stats
-  const [productCount, tenantCount, inventoryCount, orderCount, deviceTypeCount, subscriptionCount] = await Promise.all([
-    prisma.deviceProduct.count(),
+  // Get comprehensive stats
+  const [
+    tenantCount,
+    inventoryCount,
+    activeSubscriptionCount,
+    pendingOrderCount,
+    totalOrderCount,
+    activeDeviceCount,
+    inactiveDeviceCount,
+  ] = await Promise.all([
     prisma.tenant.count(),
     prisma.deviceInventory.count(),
-    prisma.order.count(),
-    prisma.deviceType.count(),
     prisma.subscription.count({ where: { status: "active" } }),
+    prisma.order.count({ where: { status: "pending" } }),
+    prisma.order.count(),
+    prisma.tenantDevice.count({ where: { status: "active" } }),
+    prisma.tenantDevice.count({ where: { status: { not: "active" } } }),
   ]);
 
-  // Get products for display
-  const products = await prisma.deviceProduct.findMany({
-    take: 3,
-    orderBy: { createdAt: "desc" },
+  // Get total revenue from paid orders
+  const paidOrders = await prisma.order.findMany({
+    where: { status: "paid" },
+    select: { total: true },
+  });
+  const totalRevenue = paidOrders.reduce((sum, order) => sum + Number(order.total), 0);
+
+  // Get monthly subscription revenue
+  const activeSubscriptions = await prisma.subscription.findMany({
+    where: { status: "active" },
+    select: { monthlyFee: true },
+  });
+  const monthlySubscriptionRevenue = activeSubscriptions.reduce((sum, sub) => sum + Number(sub.monthlyFee), 0);
+
+  // Get devices by category for pie chart
+  const devicesByCategory = await prisma.tenantDevice.groupBy({
+    by: ["status"],
+    _count: { id: true },
   });
 
-  // Get recent orders
-  const recentOrders = await prisma.order.findMany({
+  // Get device types for category breakdown
+  const deviceTypes = await prisma.deviceType.findMany({
+    select: { category: true },
+  });
+  const categoryCount: Record<string, number> = {};
+  deviceTypes.forEach(dt => {
+    const cat = dt.category || "other";
+    categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+  });
+
+  // Monthly revenue data (last 6 months - simulated based on actual data)
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  const monthlyRevenue = months.map((month, idx) => ({
+    month,
+    revenue: Math.round(totalRevenue * (0.6 + Math.random() * 0.4) / 6 * (idx + 1) / 3),
+  }));
+
+  // Today's orders
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todaysOrders = await prisma.order.findMany({
+    where: {
+      createdAt: { gte: today },
+    },
     orderBy: { createdAt: "desc" },
-    take: 4,
+    take: 5,
     include: {
-      items: {
-        include: { product: true },
-      },
+      items: { include: { product: true } },
     },
   });
 
-  // Get recent tenants
-  const recentTenants = await prisma.tenant.findMany({
+  // Recent orders (last 7 days)
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const recentOrders = await prisma.order.findMany({
+    where: {
+      createdAt: { gte: weekAgo },
+      status: { not: "pending" },
+    },
     orderBy: { createdAt: "desc" },
-    take: 4,
+    take: 5,
+    include: {
+      items: { include: { product: true } },
+    },
   });
 
-  // Weekly activity data (simulated)
-  const weeklyActivity = [
-    { day: "Sun", value: 20 },
-    { day: "Mon", value: 45 },
-    { day: "Tue", value: 35 },
-    { day: "Wed", value: 60 },
-    { day: "Thu", value: 50 },
-    { day: "Fri", value: 75 },
-    { day: "Sat", value: 40 },
-  ];
+  // Pending orders
+  const pendingOrdersList = await prisma.order.findMany({
+    where: { status: "pending" },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    include: {
+      items: { include: { product: true } },
+    },
+  });
 
-  // Daily tasks
-  const dailyTasks = [
-    { id: 1, title: "Device Provisioning", count: inventoryCount, icon: "device", color: "purple" },
-    { id: 2, title: "Tenant Onboarding", count: tenantCount, icon: "users", color: "blue" },
-    { id: 3, title: "Order Processing", count: orderCount, icon: "orders", color: "green" },
-    { id: 4, title: "Subscription Management", count: subscriptionCount, icon: "subscription", color: "orange" },
-  ];
+  // Inactive devices
+  const inactiveDevicesList = await prisma.tenantDevice.findMany({
+    where: { status: { not: "active" } },
+    take: 5,
+    include: {
+      inventory: { include: { deviceType: true } },
+      subscription: { include: { product: true } },
+    },
+  });
 
-
-  // Active tasks/alerts
-  const activeTasks = [
-    { id: 1, title: "Firmware Updates", subtitle: `${deviceTypeCount} device types`, status: "in_progress" },
-    { id: 2, title: "Inventory Check", subtitle: `${inventoryCount} units`, status: "in_progress" },
-    { id: 3, title: "Order Fulfillment", subtitle: `${orderCount} orders`, status: "in_progress" },
-  ];
-
-  const categoryIcons: Record<string, React.ReactNode> = {
-    water: <Droplets className="h-5 w-5 text-blue-500" />,
-    power: <Zap className="h-5 w-5 text-yellow-500" />,
-    environment: <Thermometer className="h-5 w-5 text-red-500" />,
+  // Stats object for charts
+  const stats = {
+    totalCustomers: tenantCount,
+    totalRevenue: Math.round(totalRevenue),
+    totalDevices: activeDeviceCount,
+    inventoryCount,
+    monthlySubscriptionRevenue: Math.round(monthlySubscriptionRevenue),
+    activeSubscriptions: activeSubscriptionCount,
+    pendingOrders: pendingOrderCount,
+    inactiveDevices: inactiveDeviceCount,
   };
 
+  // Device category data for pie chart
+  const devicesByCategoryData = Object.entries(categoryCount).map(([name, value]) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    value,
+  }));
+
+  // Growth calculations (simulated - in production, compare with previous period)
+  const revenueGrowth = 12;
+  const customerGrowth = 8;
+
   return (
-    <main className="p-6">
-      <div className="grid grid-cols-12 gap-6">
-        {/* Left Column - Main Content */}
-        <div className="col-span-12 lg:col-span-8 space-y-6">
-          {/* Products Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Latest Products</h2>
-              <Link href="/admin/products" className="text-purple-600 text-sm font-medium hover:text-purple-700">
-                View all
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {products.length > 0 ? products.map((product) => (
-                <Link 
-                  key={product.id.toString()} 
-                  href={`/admin/products/${product.id}`}
-                  className="bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-200"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="p-2.5 bg-purple-50 rounded-xl">
-                      {categoryIcons[product.category] || <Package className="h-5 w-5 text-purple-500" />}
-                    </div>
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
-                  <p className="text-sm text-gray-500 mb-3">{product.category}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                      <span className="text-sm font-medium text-gray-700">4.9</span>
-                    </div>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                      IoT Device
-                    </span>
-                  </div>
-                </Link>
-              )) : (
-                <div className="col-span-3 bg-white rounded-2xl p-8 border border-gray-100 text-center">
-                  <Package className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">No products yet</p>
-                </div>
-              )}
-            </div>
-          </div>
+    <main className="p-4 md:p-6 space-y-6">
+      {/* Stats Cards and Charts */}
+      <AdminDashboardCharts
+        stats={stats}
+        monthlyRevenue={monthlyRevenue}
+        devicesByCategory={devicesByCategoryData}
+        revenueGrowth={revenueGrowth}
+        customerGrowth={customerGrowth}
+      />
 
-          {/* Activity & Tasks Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Hours Activity Chart */}
-            <div className="bg-white rounded-2xl p-5 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900">Weekly Activity</h3>
-                  <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                    <TrendingUp className="h-3 w-3" />
-                    +9% increased from last week
-                  </p>
-                </div>
-                <select className="text-sm text-gray-500 bg-gray-50 border-0 rounded-lg px-2 py-1">
-                  <option>weekly</option>
-                  <option>monthly</option>
-                </select>
-              </div>
-              <div className="space-y-3">
-                {weeklyActivity.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
-                    <span className="text-xs text-gray-500 w-8">{item.day}</span>
-                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-purple-600 rounded-full transition-all duration-500"
-                        style={{ width: `${item.value}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Daily Schedule */}
-            <div className="bg-white rounded-2xl p-5 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Platform Overview</h3>
-                <ChevronRight className="h-5 w-5 text-gray-400" />
-              </div>
-              <div className="space-y-3">
-                {dailyTasks.map((task) => (
-                  <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${
-                        task.color === "purple" ? "bg-purple-500" :
-                        task.color === "blue" ? "bg-blue-500" :
-                        task.color === "green" ? "bg-green-500" :
-                        "bg-orange-500"
-                      }`} />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{task.title}</p>
-                        <p className="text-xs text-gray-500">{task.count} items</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-gray-400" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Orders */}
+      {/* Orders and AI Advisor Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column - Orders */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Today's Orders */}
           <div className="bg-white rounded-2xl p-5 border border-gray-100">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Recent Orders</h3>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  Active
-                </Badge>
-                <Link href="/admin/orders" className="p-1 hover:bg-gray-100 rounded-lg">
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </Link>
+              <div>
+                <h3 className="font-semibold text-gray-900">Today&apos;s Orders</h3>
+                <p className="text-sm text-gray-500">{todaysOrders.length} order(s) today</p>
               </div>
+              <Link href="/admin/orders" className="text-purple-600 text-sm font-medium hover:text-purple-700 flex items-center gap-1">
+                View all <ChevronRight className="h-4 w-4" />
+              </Link>
             </div>
             <div className="space-y-3">
-              {recentOrders.length > 0 ? recentOrders.map((order) => (
+              {todaysOrders.length > 0 ? todaysOrders.map((order) => (
                 <Link 
                   key={order.id.toString()}
                   href={`/admin/orders/${order.id}`}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors gap-3"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-xl ${
@@ -232,89 +199,175 @@ export default async function AdminPortalPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">Amount</p>
-                    <p className="font-semibold text-gray-900">{order.currency} {Number(order.total).toFixed(0)}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full ${
-                          order.status === "paid" ? "bg-green-500 w-full" :
-                          order.status === "pending" ? "bg-yellow-500 w-1/2" :
-                          "bg-gray-400 w-1/4"
-                        }`}
-                      />
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">{order.currency} {Number(order.total).toFixed(0)}</p>
                     </div>
-                    <span className="text-sm font-medium text-gray-700">
-                      {order.status === "paid" ? "100%" : order.status === "pending" ? "50%" : "25%"}
-                    </span>
+                    <Badge variant="outline" className={
+                      order.status === "paid" ? "bg-green-50 text-green-700 border-green-200" :
+                      order.status === "pending" ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                      "bg-gray-50 text-gray-700 border-gray-200"
+                    }>
+                      {order.status}
+                    </Badge>
                   </div>
                 </Link>
               )) : (
                 <div className="text-center py-8 text-gray-500">
-                  <ShoppingCart className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                  <p>No orders yet</p>
+                  <Clock className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                  <p>No orders today yet</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent & Pending Orders Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Recent Orders */}
+            <div className="bg-white rounded-2xl p-5 border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Recent Orders</h3>
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Completed
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {recentOrders.length > 0 ? recentOrders.map((order) => (
+                  <Link 
+                    key={order.id.toString()}
+                    href={`/admin/orders/${order.id}`}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{order.orderRef}</p>
+                        <p className="text-xs text-gray-500">{order.currency} {Number(order.total).toFixed(0)}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </Link>
+                )) : (
+                  <p className="text-center py-4 text-gray-500 text-sm">No recent orders</p>
+                )}
+              </div>
+            </div>
+
+            {/* Pending Orders */}
+            <div className="bg-white rounded-2xl p-5 border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Pending Orders</h3>
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                  {pendingOrdersList.length} Pending
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {pendingOrdersList.length > 0 ? pendingOrdersList.map((order) => (
+                  <Link 
+                    key={order.id.toString()}
+                    href={`/admin/orders/${order.id}`}
+                    className="flex items-center justify-between p-3 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-yellow-600" />
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{order.orderRef}</p>
+                        <p className="text-xs text-gray-500">{order.currency} {Number(order.total).toFixed(0)}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </Link>
+                )) : (
+                  <p className="text-center py-4 text-gray-500 text-sm">No pending orders</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Inactive Devices */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-semibold text-gray-900">Inactive Devices</h3>
+                <p className="text-sm text-gray-500">Devices requiring attention</p>
+              </div>
+              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                {inactiveDevicesList.length} Inactive
+              </Badge>
+            </div>
+            <div className="space-y-3">
+              {inactiveDevicesList.length > 0 ? inactiveDevicesList.map((device) => (
+                <div 
+                  key={device.id.toString()}
+                  className="flex items-center justify-between p-4 bg-red-50 rounded-xl"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-red-100">
+                      <WifiOff className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {device.nickname || device.subscription?.product?.name || `Device ${device.id}`}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {device.inventory?.serialNumber || "No serial"} • {device.inventory?.deviceType?.name || "Unknown type"}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200">
+                    {device.status}
+                  </Badge>
+                </div>
+              )) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Wifi className="h-10 w-10 text-green-300 mx-auto mb-3" />
+                  <p>All devices are active</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right Column - Sidebar Widgets */}
-        <div className="col-span-12 lg:col-span-4 space-y-6">
-          {/* Premium Card */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-gray-900">Mechatronics</span>
-              <div className="flex -space-x-2">
-                <div className="w-8 h-8 bg-purple-100 rounded-full border-2 border-white flex items-center justify-center">
-                  <Zap className="h-4 w-4 text-purple-600" />
-                </div>
-              </div>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Platform Stats</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Manage {tenantCount} tenants with {subscriptionCount} active subscriptions
-            </p>
-            <Link 
-              href="/admin/reports"
-              className="block w-full py-2.5 bg-purple-600 text-white text-center rounded-xl font-medium hover:bg-purple-700 transition-colors"
-            >
-              View Reports
-            </Link>
-          </div>
+        {/* Right Column - AI Advisor */}
+        <div className="lg:col-span-4 space-y-6">
+          <AIAdvisor stats={stats} />
 
-          {/* Calendar */}
-          <CalendarWidget />
-
-          {/* Active Tasks */}
+          {/* Quick Actions */}
           <div className="bg-white rounded-2xl p-5 border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Active Tasks</h3>
-              <Link href="/admin/alerts" className="p-1 hover:bg-gray-100 rounded-lg">
-                <ChevronRight className="h-5 w-5 text-gray-400" />
-              </Link>
-            </div>
+            <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              {activeTasks.map((task) => (
-                <div key={task.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl">
-                  <div className="p-2 bg-white rounded-lg shadow-sm">
-                    {task.status === "in_progress" ? (
-                      <Clock className="h-4 w-4 text-purple-600" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{task.title}</p>
-                    <p className="text-xs text-gray-500">{task.subtitle}</p>
-                  </div>
-                  <Badge className="bg-purple-100 text-purple-700 border-0 text-xs">
-                    In Progress
-                  </Badge>
-                </div>
-              ))}
+              <Link 
+                href="/admin/orders"
+                className="flex items-center gap-3 p-3 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+              >
+                <ShoppingCart className="h-5 w-5 text-purple-600" />
+                <span className="text-sm font-medium text-gray-900">Process Orders</span>
+                <ChevronRight className="h-4 w-4 text-gray-400 ml-auto" />
+              </Link>
+              <Link 
+                href="/admin/inventory"
+                className="flex items-center gap-3 p-3 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors"
+              >
+                <Package className="h-5 w-5 text-orange-600" />
+                <span className="text-sm font-medium text-gray-900">Manage Inventory</span>
+                <ChevronRight className="h-4 w-4 text-gray-400 ml-auto" />
+              </Link>
+              <Link 
+                href="/admin/tenants"
+                className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
+              >
+                <AlertTriangle className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium text-gray-900">View Customers</span>
+                <ChevronRight className="h-4 w-4 text-gray-400 ml-auto" />
+              </Link>
+              <Link 
+                href="/admin/reports"
+                className="flex items-center gap-3 p-3 bg-green-50 rounded-xl hover:bg-green-100 transition-colors"
+              >
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium text-gray-900">View Reports</span>
+                <ChevronRight className="h-4 w-4 text-gray-400 ml-auto" />
+              </Link>
             </div>
           </div>
         </div>
