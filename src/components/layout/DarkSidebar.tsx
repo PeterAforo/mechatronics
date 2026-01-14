@@ -8,7 +8,8 @@ import {
   Settings, Boxes, BarChart3, Home, Cpu,
   Bell, Shield, CreditCard, Radio,
   LayoutDashboard, Wifi, AlertTriangle, Building2,
-  Key, FileText, LucideIcon, Menu, X, Code, DollarSign
+  Key, FileText, LucideIcon, Menu, X, Code, DollarSign,
+  ChevronDown
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -17,6 +18,11 @@ interface NavItem {
   label: string;
   icon: string;
   exact?: boolean;
+}
+
+interface NavCategory {
+  name: string;
+  items: NavItem[];
 }
 
 interface DarkSidebarProps {
@@ -32,44 +38,83 @@ const iconMap: Record<string, LucideIcon> = {
   Settings, Wifi, AlertTriangle, Building2, Key, FileText, Code, DollarSign
 };
 
-const adminNavItems: NavItem[] = [
-  { href: "/admin", label: "Dashboard", icon: "Home", exact: true },
-  { href: "/admin/telemetry", label: "Telemetry", icon: "Radio" },
-  { href: "/admin/devices", label: "Devices", icon: "Wifi" },
-  { href: "/admin/products", label: "Products", icon: "Package" },
-  { href: "/admin/device-types", label: "Device Types", icon: "Factory" },
-  { href: "/admin/inventory", label: "Inventory", icon: "Boxes" },
-  { href: "/admin/firmware", label: "Firmware OTA", icon: "Cpu" },
-  { href: "/admin/tenants", label: "Tenants", icon: "Users" },
-  { href: "/admin/orders", label: "Orders", icon: "ShoppingCart" },
-  { href: "/admin/payments", label: "Payments", icon: "CreditCard" },
-  { href: "/admin/revenue", label: "Revenue", icon: "DollarSign" },
-  { href: "/admin/alerts", label: "Alerts", icon: "Bell" },
-  { href: "/admin/alerts/rules", label: "Alert Rules", icon: "AlertTriangle" },
-  { href: "/admin/audit-logs", label: "Audit Logs", icon: "Shield" },
-  { href: "/admin/reports", label: "Reports", icon: "BarChart3" },
-  { href: "/admin/api-docs", label: "API Docs", icon: "Code" },
+const adminNavCategories: NavCategory[] = [
+  {
+    name: "Overview",
+    items: [
+      { href: "/admin", label: "Dashboard", icon: "Home", exact: true },
+      { href: "/admin/telemetry", label: "Telemetry", icon: "Radio" },
+    ],
+  },
+  {
+    name: "Devices",
+    items: [
+      { href: "/admin/devices", label: "All Devices", icon: "Wifi" },
+      { href: "/admin/device-types", label: "Device Types", icon: "Factory" },
+      { href: "/admin/inventory", label: "Inventory", icon: "Boxes" },
+      { href: "/admin/firmware", label: "Firmware OTA", icon: "Cpu" },
+    ],
+  },
+  {
+    name: "Commerce",
+    items: [
+      { href: "/admin/products", label: "Products", icon: "Package" },
+      { href: "/admin/orders", label: "Orders", icon: "ShoppingCart" },
+      { href: "/admin/payments", label: "Payments", icon: "CreditCard" },
+      { href: "/admin/revenue", label: "Revenue", icon: "DollarSign" },
+    ],
+  },
+  {
+    name: "Operations",
+    items: [
+      { href: "/admin/tenants", label: "Tenants", icon: "Users" },
+      { href: "/admin/alerts", label: "Alerts", icon: "Bell" },
+      { href: "/admin/alerts/rules", label: "Alert Rules", icon: "AlertTriangle" },
+    ],
+  },
+  {
+    name: "System",
+    items: [
+      { href: "/admin/audit-logs", label: "Audit Logs", icon: "Shield" },
+      { href: "/admin/reports", label: "Reports", icon: "BarChart3" },
+      { href: "/admin/api-docs", label: "API Docs", icon: "Code" },
+      { href: "/admin/settings", label: "Settings", icon: "Settings" },
+    ],
+  },
 ];
 
-const adminBottomNavItems: NavItem[] = [
-  { href: "/admin/settings", label: "Settings", icon: "Settings" },
-];
-
-const portalNavItems: NavItem[] = [
-  { href: "/portal", label: "Dashboard", icon: "LayoutDashboard", exact: true },
-  { href: "/portal/devices", label: "Devices", icon: "Cpu" },
-  { href: "/portal/sites", label: "Sites", icon: "Building2" },
-  { href: "/portal/alerts", label: "Alerts", icon: "Bell" },
-  { href: "/portal/alert-rules", label: "Alert Rules", icon: "AlertTriangle" },
-  { href: "/portal/subscriptions", label: "Subscriptions", icon: "CreditCard" },
-  { href: "/portal/billing", label: "Billing", icon: "FileText" },
-  { href: "/portal/reports", label: "Reports", icon: "BarChart3" },
-  { href: "/portal/team", label: "Team", icon: "Users" },
-  { href: "/portal/api-keys", label: "API Keys", icon: "Key" },
-];
-
-const portalBottomNavItems: NavItem[] = [
-  { href: "/portal/settings", label: "Settings", icon: "Settings" },
+const portalNavCategories: NavCategory[] = [
+  {
+    name: "Overview",
+    items: [
+      { href: "/portal", label: "Dashboard", icon: "LayoutDashboard", exact: true },
+    ],
+  },
+  {
+    name: "Devices",
+    items: [
+      { href: "/portal/devices", label: "My Devices", icon: "Cpu" },
+      { href: "/portal/sites", label: "Sites", icon: "Building2" },
+    ],
+  },
+  {
+    name: "Monitoring",
+    items: [
+      { href: "/portal/alerts", label: "Alerts", icon: "Bell" },
+      { href: "/portal/alert-rules", label: "Alert Rules", icon: "AlertTriangle" },
+      { href: "/portal/reports", label: "Reports", icon: "BarChart3" },
+    ],
+  },
+  {
+    name: "Account",
+    items: [
+      { href: "/portal/subscriptions", label: "Subscriptions", icon: "CreditCard" },
+      { href: "/portal/billing", label: "Billing", icon: "FileText" },
+      { href: "/portal/team", label: "Team", icon: "Users" },
+      { href: "/portal/api-keys", label: "API Keys", icon: "Key" },
+      { href: "/portal/settings", label: "Settings", icon: "Settings" },
+    ],
+  },
 ];
 
 export function DarkSidebar({ 
@@ -80,9 +125,21 @@ export function DarkSidebar({
 }: DarkSidebarProps) {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
 
-  const navItems = userType === "admin" ? adminNavItems : portalNavItems;
-  const bottomNavItems = userType === "admin" ? adminBottomNavItems : portalBottomNavItems;
+  const navCategories = userType === "admin" ? adminNavCategories : portalNavCategories;
+
+  const toggleCategory = (categoryName: string) => {
+    setCollapsedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryName)) {
+        newSet.delete(categoryName);
+      } else {
+        newSet.add(categoryName);
+      }
+      return newSet;
+    });
+  };
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) {
@@ -162,88 +219,59 @@ export function DarkSidebar({
         </Link>
       </div>
 
-      {/* Main Navigation */}
-      <nav className="flex-1 px-4 py-2 overflow-y-auto">
-        <ul className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = iconMap[item.icon] || Home;
-            const active = isActive(item.href, item.exact);
+      {/* Main Navigation with Collapsible Categories */}
+      <nav className="flex-1 px-3 py-2">
+        <div className="space-y-1">
+          {navCategories.map((category) => {
+            const isCollapsed = collapsedCategories.has(category.name);
+            const hasActiveItem = category.items.some(item => isActive(item.href, item.exact));
+            
             return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
-                    active
-                      ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
-                      : "text-gray-400 hover:bg-white/5 hover:text-white"
-                  )}
+              <div key={category.name}>
+                {/* Category Header */}
+                <button
+                  onClick={() => toggleCategory(category.name)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
                 >
-                  <Icon className={cn("h-5 w-5", active ? "text-white" : "text-gray-500")} />
-                  {item.label}
-                </Link>
-              </li>
+                  <span>{category.name}</span>
+                  <ChevronDown 
+                    className={cn(
+                      "h-3.5 w-3.5 transition-transform duration-200",
+                      isCollapsed ? "-rotate-90" : ""
+                    )} 
+                  />
+                </button>
+                
+                {/* Category Items */}
+                <div className={cn(
+                  "space-y-0.5 overflow-hidden transition-all duration-200",
+                  isCollapsed ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
+                )}>
+                  {category.items.map((item) => {
+                    const Icon = iconMap[item.icon] || Home;
+                    const active = isActive(item.href, item.exact);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                          active
+                            ? "bg-purple-600 text-white shadow-md shadow-purple-600/20"
+                            : "text-gray-400 hover:bg-white/5 hover:text-white"
+                        )}
+                      >
+                        <Icon className={cn("h-4 w-4", active ? "text-white" : "text-gray-500")} />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
-        </ul>
+        </div>
       </nav>
-
-      {/* Bottom Navigation */}
-      {bottomNavItems.length > 0 && (
-        <div className="px-4 py-4 border-t border-white/10">
-          <ul className="space-y-1">
-            {bottomNavItems.map((item) => {
-              const Icon = iconMap[item.icon] || Settings;
-              const active = isActive(item.href);
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
-                      active
-                        ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
-                        : "text-gray-400 hover:bg-white/5 hover:text-white"
-                    )}
-                  >
-                    <Icon className={cn("h-5 w-5", active ? "text-white" : "text-gray-500")} />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      {/* Mobile App Promo Card - Hidden on smaller screens to save space */}
-      <div className="px-4 pb-6 hidden sm:block">
-        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-2xl p-4 border border-purple-500/20">
-          <div className="flex items-center justify-center mb-3">
-            <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
-              <svg 
-                className="w-6 h-6 text-white" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" 
-                />
-              </svg>
-            </div>
-          </div>
-          <p className="text-white text-sm font-medium text-center mb-1">
-            Download Our Mobile App
-          </p>
-          <p className="text-gray-400 text-xs text-center">
-            Monitor your devices on the go
-          </p>
-        </div>
-      </div>
     </aside>
     </>
   );
