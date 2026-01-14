@@ -8,7 +8,7 @@ import {
   Settings, Boxes, BarChart3, Home, Cpu,
   Bell, Shield, CreditCard, Radio,
   LayoutDashboard, Wifi, AlertTriangle, Building2,
-  Key, FileText, LucideIcon, Menu, X
+  Key, FileText, LucideIcon, Menu, X, Code, DollarSign
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -29,12 +29,13 @@ interface DarkSidebarProps {
 const iconMap: Record<string, LucideIcon> = {
   Home, LayoutDashboard, Radio, Package, Factory, Boxes, Cpu,
   Users, ShoppingCart, CreditCard, Bell, Shield, BarChart3,
-  Settings, Wifi, AlertTriangle, Building2, Key, FileText
+  Settings, Wifi, AlertTriangle, Building2, Key, FileText, Code, DollarSign
 };
 
 const adminNavItems: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: "Home", exact: true },
   { href: "/admin/telemetry", label: "Telemetry", icon: "Radio" },
+  { href: "/admin/devices", label: "Devices", icon: "Wifi" },
   { href: "/admin/products", label: "Products", icon: "Package" },
   { href: "/admin/device-types", label: "Device Types", icon: "Factory" },
   { href: "/admin/inventory", label: "Inventory", icon: "Boxes" },
@@ -42,9 +43,12 @@ const adminNavItems: NavItem[] = [
   { href: "/admin/tenants", label: "Tenants", icon: "Users" },
   { href: "/admin/orders", label: "Orders", icon: "ShoppingCart" },
   { href: "/admin/payments", label: "Payments", icon: "CreditCard" },
+  { href: "/admin/revenue", label: "Revenue", icon: "DollarSign" },
   { href: "/admin/alerts", label: "Alerts", icon: "Bell" },
+  { href: "/admin/alerts/rules", label: "Alert Rules", icon: "AlertTriangle" },
   { href: "/admin/audit-logs", label: "Audit Logs", icon: "Shield" },
   { href: "/admin/reports", label: "Reports", icon: "BarChart3" },
+  { href: "/admin/api-docs", label: "API Docs", icon: "Code" },
 ];
 
 const adminBottomNavItems: NavItem[] = [
