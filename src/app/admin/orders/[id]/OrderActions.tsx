@@ -37,7 +37,7 @@ export default function OrderActions({ orderId, status, total, currency }: Order
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
-  const [paymentProvider, setPaymentProvider] = useState("other");
+  const [paymentProvider, setPaymentProvider] = useState("cash");
   const [paymentRef, setPaymentRef] = useState("");
 
   const handleAction = async (action: string, extraData?: Record<string, string>) => {
@@ -167,10 +167,12 @@ export default function OrderActions({ orderId, status, total, currency }: Order
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="manual">Manual / Cash</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="bank">Bank Transfer</SelectItem>
+                    <SelectItem value="momo">Mobile Money</SelectItem>
                     <SelectItem value="card">Card Payment</SelectItem>
+                    <SelectItem value="paystack">Paystack</SelectItem>
+                    <SelectItem value="hubtel">Hubtel</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>

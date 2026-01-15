@@ -14,6 +14,8 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const productCode = searchParams.get("product") || "";
+  const quantityParam = searchParams.get("qty");
+  const quantity = quantityParam ? parseInt(quantityParam, 10) || 1 : 1;
   
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -51,6 +53,8 @@ function RegisterForm() {
           email: formData.email,
           phone: formData.phone,
           password: formData.password,
+          productCode: productCode || undefined,
+          quantity: productCode ? quantity : undefined,
         }),
       });
 
@@ -60,9 +64,14 @@ function RegisterForm() {
         throw new Error(data.error || "Registration failed");
       }
 
-      toast.success("Account created successfully! Please sign in.");
-      const loginUrl = productCode ? `/login?callbackUrl=/order?product=${productCode}` : "/login";
-      router.push(loginUrl);
+      // If order was created during registration, show order ref and redirect to portal
+      if (data.order) {
+        toast.success(`Account created! Order ${data.order.orderRef} placed. Please sign in to view your order.`);
+        router.push("/login?callbackUrl=/portal");
+      } else {
+        toast.success("Account created successfully! Please sign in.");
+        router.push("/login");
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Something went wrong");
     } finally {

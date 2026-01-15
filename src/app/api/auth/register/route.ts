@@ -3,6 +3,7 @@ import { hash } from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { sendEmail, emailTemplates } from "@/lib/email";
+import { generateOrderRef } from "@/lib/utils/generators";
 
 const registerSchema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters"),
@@ -10,6 +11,8 @@ const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  productCode: z.string().optional(),
+  quantity: z.number().min(1).max(10).optional(),
 });
 
 function generateTenantCode(companyName: string): string {
@@ -34,7 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { companyName, contactName, email, phone, password } = validation.data;
+    const { companyName, contactName, email, phone, password, productCode, quantity = 1 } = validation.data;
 
     // Check if email already exists
     const existingUser = await prisma.tenantUser.findUnique({
@@ -66,7 +69,15 @@ export async function POST(request: NextRequest) {
     // Generate unique tenant code
     const tenantCode = generateTenantCode(companyName);
 
-    // Create tenant and user in a transaction
+    // If productCode provided, get the product first
+    let product = null;
+    if (productCode) {
+      product = await prisma.deviceProduct.findUnique({
+        where: { productCode },
+      });
+    }
+
+    // Create tenant, user, and order (if product) in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create tenant
       const tenant = await tx.tenant.create({
@@ -94,7 +105,38 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return { tenant, user };
+      // Create order if product was selected during registration
+      let order = null;
+      if (product) {
+        const setupFee = Number(product.setupFee);
+        const monthlyFee = Number(product.monthlyFee);
+        const lineTotal = (setupFee + monthlyFee) * quantity;
+
+        order = await tx.order.create({
+          data: {
+            tenantId: tenant.id,
+            orderRef: generateOrderRef(),
+            status: "pending",
+            currency: product.currency,
+            subtotal: lineTotal,
+            discount: 0,
+            tax: 0,
+            total: lineTotal,
+            items: {
+              create: {
+                productId: product.id,
+                quantity,
+                setupFee: product.setupFee,
+                monthlyFee: product.monthlyFee,
+                billingInterval: product.billingInterval,
+                lineTotal,
+              },
+            },
+          },
+        });
+      }
+
+      return { tenant, user, order };
     });
 
     // Send welcome email (async, don't block response)
@@ -110,7 +152,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Account created successfully",
+        message: result.order 
+          ? "Account created and order placed successfully! Please sign in to view your order."
+          : "Account created successfully",
         tenant: {
           id: result.tenant.id.toString(),
           code: result.tenant.tenantCode,
@@ -121,6 +165,12 @@ export async function POST(request: NextRequest) {
           email: result.user.email,
           name: result.user.name,
         },
+        order: result.order ? {
+          id: result.order.id.toString(),
+          orderRef: result.order.orderRef,
+          status: result.order.status,
+          total: result.order.total.toString(),
+        } : null,
       },
       { status: 201 }
     );

@@ -69,7 +69,7 @@ function OrderContent() {
 
   const handlePlaceOrder = async () => {
     if (status !== "authenticated") {
-      router.push(`/register?product=${productCode}`);
+      router.push(`/register?product=${productCode}&qty=${quantity}`);
       return;
     }
 
@@ -212,7 +212,7 @@ function OrderContent() {
                     You need to register to place an order. It only takes a minute!
                   </p>
                   <div className="flex gap-3">
-                    <Link href={`/register?product=${productCode}`}>
+                    <Link href={`/register?product=${productCode}&qty=${quantity}`}>
                       <Button className="bg-[#f74780] hover:bg-[#e03a6f]">
                         Register Now
                       </Button>

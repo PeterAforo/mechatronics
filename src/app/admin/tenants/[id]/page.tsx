@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Building2, Mail, Phone, MapPin, Calendar, Users, Cpu, Copy, Link2 } from "lucide-react";
 import { CopyButton } from "@/components/ui/copy-button";
+import AssignDeviceDialog from "./AssignDeviceDialog";
 
 export default async function TenantDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -64,9 +65,12 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
               <p className="text-gray-500">{tenant.tenantCode}</p>
             </div>
           </div>
-          <Badge variant="outline" className={statusColors[tenant.status] || statusColors.pending}>
-            {tenant.status}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <AssignDeviceDialog tenantId={id} tenantName={tenant.companyName} />
+            <Badge variant="outline" className={statusColors[tenant.status] || statusColors.pending}>
+              {tenant.status}
+            </Badge>
+          </div>
         </div>
       </div>
 
