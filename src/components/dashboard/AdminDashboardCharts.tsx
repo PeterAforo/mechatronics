@@ -219,8 +219,8 @@ export function AdminDashboardCharts({
               +{revenueGrowth}%
             </div>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-64 w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={monthlyRevenue}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
@@ -265,9 +265,9 @@ export function AdminDashboardCharts({
               <p className="text-sm text-gray-500">Distribution of deployed devices</p>
             </div>
           </div>
-          <div className="h-64">
+          <div className="h-64 w-full min-w-0">
             {devicesByCategory.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
                   <Pie
                     data={devicesByCategory}
