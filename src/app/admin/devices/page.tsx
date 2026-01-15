@@ -30,34 +30,55 @@ export default async function AdminDevicesPage() {
     }),
   ]);
 
-  const statusCounts = {
-    active: deviceStats.find(s => s.status === "active")?._count.id || 0,
-    inactive: deviceStats.find(s => s.status === "inactive")?._count.id || 0,
-    suspended: deviceStats.find(s => s.status === "suspended")?._count.id || 0,
-  };
+  const totalDevices = devices.length;
 
-  const totalDevices = Object.values(statusCounts).reduce((a, b) => a + b, 0);
-
-  // Calculate health scores
+  // Calculate connectivity status based on telemetry activity
+  // Online = data received within last 3 hours
+  // Offline = no data in >3 hours or never connected
   const now = new Date();
+  const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+  
   const devicesWithHealth = devices.map(device => {
     let healthScore = 100;
+    let connectivityStatus: "online" | "offline" | "never_connected";
+    let hoursSinceLastSeen: number | null = null;
     
-    // Reduce score if inactive
-    if (device.status !== "active") healthScore -= 30;
-    
-    // Reduce score if not seen recently
-    if (device.lastSeenAt) {
-      const hoursSinceLastSeen = (now.getTime() - device.lastSeenAt.getTime()) / (1000 * 60 * 60);
-      if (hoursSinceLastSeen > 24) healthScore -= 20;
-      if (hoursSinceLastSeen > 72) healthScore -= 20;
-      if (hoursSinceLastSeen > 168) healthScore -= 20;
+    if (!device.lastSeenAt) {
+      connectivityStatus = "never_connected";
+      healthScore = 20;
     } else {
-      healthScore -= 40;
+      hoursSinceLastSeen = (now.getTime() - device.lastSeenAt.getTime()) / (1000 * 60 * 60);
+      
+      if (device.lastSeenAt >= threeHoursAgo) {
+        connectivityStatus = "online";
+        healthScore = 100;
+      } else {
+        connectivityStatus = "offline";
+        // Reduce health based on how long offline
+        if (hoursSinceLastSeen > 3) healthScore = 70;
+        if (hoursSinceLastSeen > 24) healthScore = 50;
+        if (hoursSinceLastSeen > 72) healthScore = 30;
+        if (hoursSinceLastSeen > 168) healthScore = 10;
+      }
     }
+    
+    // Further reduce if subscription status is not active
+    if (device.status !== "active") healthScore = Math.max(0, healthScore - 20);
 
-    return { ...device, healthScore: Math.max(0, healthScore) };
+    return { 
+      ...device, 
+      healthScore: Math.max(0, healthScore),
+      connectivityStatus,
+      hoursSinceLastSeen,
+    };
   });
+
+  // Count by connectivity status (based on telemetry, not subscription status)
+  const connectivityCounts = {
+    online: devicesWithHealth.filter(d => d.connectivityStatus === "online").length,
+    offline: devicesWithHealth.filter(d => d.connectivityStatus === "offline").length,
+    neverConnected: devicesWithHealth.filter(d => d.connectivityStatus === "never_connected").length,
+  };
 
   return (
     <main className="p-4 md:p-6">
@@ -80,7 +101,7 @@ export default async function AdminDevicesPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Based on Telemetry Activity */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl p-4 border border-gray-100">
           <div className="flex items-center gap-3">
@@ -99,8 +120,8 @@ export default async function AdminDevicesPage() {
               <Wifi className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{statusCounts.active}</p>
-              <p className="text-sm text-gray-500">Active</p>
+              <p className="text-2xl font-bold text-gray-900">{connectivityCounts.online}</p>
+              <p className="text-sm text-gray-500">Online</p>
             </div>
           </div>
         </div>
@@ -110,8 +131,8 @@ export default async function AdminDevicesPage() {
               <WifiOff className="h-5 w-5 text-red-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{statusCounts.inactive}</p>
-              <p className="text-sm text-gray-500">Inactive</p>
+              <p className="text-2xl font-bold text-gray-900">{connectivityCounts.offline}</p>
+              <p className="text-sm text-gray-500">Offline (&gt;3hrs)</p>
             </div>
           </div>
         </div>
@@ -121,8 +142,8 @@ export default async function AdminDevicesPage() {
               <AlertTriangle className="h-5 w-5 text-yellow-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{statusCounts.suspended}</p>
-              <p className="text-sm text-gray-500">Suspended</p>
+              <p className="text-2xl font-bold text-gray-900">{connectivityCounts.neverConnected}</p>
+              <p className="text-sm text-gray-500">Never Connected</p>
             </div>
           </div>
         </div>
@@ -150,20 +171,23 @@ export default async function AdminDevicesPage() {
 
         <div className="divide-y divide-gray-100">
           {devicesWithHealth.length > 0 ? devicesWithHealth.map((device) => (
-            <div
+            <Link
               key={device.id.toString()}
-              className="p-4 hover:bg-gray-50 transition-colors"
+              href={`/admin/devices/${device.id}`}
+              className="block p-4 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className={`p-2 rounded-lg ${
-                    device.status === "active" ? "bg-green-50" : 
-                    device.status === "inactive" ? "bg-red-50" : "bg-yellow-50"
+                    device.connectivityStatus === "online" ? "bg-green-50" : 
+                    device.connectivityStatus === "offline" ? "bg-red-50" : "bg-yellow-50"
                   }`}>
-                    {device.status === "active" ? (
+                    {device.connectivityStatus === "online" ? (
                       <Wifi className="h-5 w-5 text-green-600" />
-                    ) : (
+                    ) : device.connectivityStatus === "offline" ? (
                       <WifiOff className="h-5 w-5 text-red-600" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
                     )}
                   </div>
                   <div>
@@ -192,25 +216,31 @@ export default async function AdminDevicesPage() {
                   <div className="text-right hidden sm:block">
                     <p className="text-sm text-gray-900">
                       {device.lastSeenAt 
-                        ? new Date(device.lastSeenAt).toLocaleDateString()
+                        ? device.hoursSinceLastSeen !== null && device.hoursSinceLastSeen < 1
+                          ? "Just now"
+                          : device.hoursSinceLastSeen !== null && device.hoursSinceLastSeen < 24
+                          ? `${device.hoursSinceLastSeen.toFixed(1)}h ago`
+                          : new Date(device.lastSeenAt).toLocaleDateString()
                         : "Never"
                       }
                     </p>
-                    <p className="text-xs text-gray-500">Last seen</p>
+                    <p className="text-xs text-gray-500">Last data</p>
                   </div>
 
+                  {/* Connectivity Status Badge */}
                   <Badge variant="outline" className={
-                    device.status === "active" ? "bg-green-50 text-green-700 border-green-200" :
-                    device.status === "inactive" ? "bg-red-50 text-red-700 border-red-200" :
+                    device.connectivityStatus === "online" ? "bg-green-50 text-green-700 border-green-200" :
+                    device.connectivityStatus === "offline" ? "bg-red-50 text-red-700 border-red-200" :
                     "bg-yellow-50 text-yellow-700 border-yellow-200"
                   }>
-                    {device.status}
+                    {device.connectivityStatus === "online" ? "Online" :
+                     device.connectivityStatus === "offline" ? "Offline" : "No Data"}
                   </Badge>
 
                   <ChevronRight className="h-5 w-5 text-gray-400" />
                 </div>
               </div>
-            </div>
+            </Link>
           )) : (
             <div className="p-12 text-center">
               <Cpu className="h-12 w-12 text-gray-300 mx-auto mb-4" />
