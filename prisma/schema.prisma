@@ -37,25 +37,27 @@ model DeviceProduct {
 }
 
 model DeviceTypeVariable {
-  id            BigInt     @id @default(autoincrement()) @map("variable_id")
-  deviceTypeId  BigInt     @map("device_type_id")
-  variableCode  String     @map("variable_code") @db.VarChar(40)
-  label         String     @db.VarChar(120)
-  unit          String?    @db.VarChar(30)
-  description   String?    @db.VarChar(255)
-  minValue      Decimal?   @map("min_value") @db.Decimal(16, 6)
-  maxValue      Decimal?   @map("max_value") @db.Decimal(16, 6)
-  displayWidget WidgetType @default(numeric) @map("display_widget")
-  displayOrder  Int        @default(0) @map("display_order")
-  isAlertable   Boolean    @default(true) @map("is_alertable")
-  isRequired    Boolean    @default(false) @map("is_required")
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime?  @updatedAt @map("updated_at")
-  deviceType    DeviceType @relation(fields: [deviceTypeId], references: [id], onDelete: Cascade)
+  id               BigInt           @id @default(autoincrement()) @map("variable_id")
+  deviceTypeId     BigInt           @map("device_type_id")
+  variableCode     String           @map("variable_code") @db.VarChar(40)
+  label            String           @db.VarChar(120)
+  unit             String?          @db.VarChar(30)
+  description      String?          @db.VarChar(255)
+  variableCategory VariableCategory @default(other) @map("variable_category")
+  minValue         Decimal?         @map("min_value") @db.Decimal(16, 6)
+  maxValue         Decimal?         @map("max_value") @db.Decimal(16, 6)
+  displayWidget    WidgetType       @default(numeric) @map("display_widget")
+  displayOrder     Int              @default(0) @map("display_order")
+  isAlertable      Boolean          @default(true) @map("is_alertable")
+  isRequired       Boolean          @default(false) @map("is_required")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime?        @updatedAt @map("updated_at")
+  deviceType       DeviceType       @relation(fields: [deviceTypeId], references: [id], onDelete: Cascade)
 
   @@unique([deviceTypeId, variableCode])
   @@index([variableCode])
   @@index([displayWidget])
+  @@index([variableCategory])
   @@map("device_type_variables")
 }
 
@@ -477,6 +479,21 @@ enum WidgetType {
   chart_bar
   status_badge
   custom
+}
+
+enum VariableCategory {
+  water
+  power
+  temperature
+  humidity
+  pressure
+  flow
+  voltage
+  current
+  energy
+  level
+  status
+  other
 }
 
 enum RuleOperator {

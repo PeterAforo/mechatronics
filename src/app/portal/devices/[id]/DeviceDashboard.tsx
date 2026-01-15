@@ -26,12 +26,14 @@ import {
   TemperatureGaugeSVG,
   GenericGaugeSVG,
   DeviceHealthSVG,
+  ColdroomSVG,
 } from "@/components/devices/DeviceVisualizations";
 
 interface Variable {
   code: string;
   label: string;
   unit: string | null;
+  category: string;
   minValue: number | null;
   maxValue: number | null;
   widget: string;
@@ -369,6 +371,24 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
   const primaryReading = primaryVariable ? data.latestReadings[primaryVariable.code] : null;
   const primaryStats = primaryVariable ? data.stats[primaryVariable.code] : null;
 
+  // Group variables by category for multi-category devices
+  const groupVariablesByCategory = () => {
+    const groups: Record<string, Variable[]> = {};
+    for (const variable of data.variables) {
+      const cat = variable.category || "other";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(variable);
+    }
+    return groups;
+  };
+  
+  const variableGroups = groupVariablesByCategory();
+  const uniqueCategories = Object.keys(variableGroups);
+  const isMultiCategory = uniqueCategories.length > 1;
+
+  // Check if this is a coldroom-type device (has temperature + humidity)
+  const isColdroom = variableGroups.temperature && (variableGroups.humidity || variableGroups.power);
+
   // Render device-specific visualization
   const renderDeviceVisualization = () => {
     if (!primaryVariable || !primaryReading) return null;
@@ -377,6 +397,39 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
     const max = primaryVariable.maxValue ?? (primaryStats?.max ?? 100);
     const isWarning = (primaryVariable.minValue !== null && primaryReading.value < primaryVariable.minValue) ||
                       (primaryVariable.maxValue !== null && primaryReading.value > primaryVariable.maxValue);
+
+    // For coldroom/multi-sensor devices, show combined visualization
+    if (isColdroom) {
+      const tempVar = variableGroups.temperature?.[0];
+      const humidVar = variableGroups.humidity?.[0];
+      const powerVar = variableGroups.power?.[0] || variableGroups.energy?.[0];
+      
+      const tempReading = tempVar ? data.latestReadings[tempVar.code] : null;
+      const humidReading = humidVar ? data.latestReadings[humidVar.code] : null;
+      const powerReading = powerVar ? data.latestReadings[powerVar.code] : null;
+      
+      return (
+        <ColdroomSVG
+          temperature={tempReading ? {
+            value: tempReading.value,
+            unit: tempVar?.unit || "°C",
+            min: tempVar?.minValue ?? undefined,
+            max: tempVar?.maxValue ?? undefined,
+          } : undefined}
+          humidity={humidReading ? {
+            value: humidReading.value,
+            unit: humidVar?.unit || "%",
+            min: humidVar?.minValue ?? undefined,
+            max: humidVar?.maxValue ?? undefined,
+          } : undefined}
+          power={powerReading ? {
+            value: powerReading.value,
+            unit: powerVar?.unit || "kW",
+          } : undefined}
+          isWarning={isWarning}
+        />
+      );
+    }
 
     switch (category) {
       case "water":

@@ -503,6 +503,137 @@ export function GenericGaugeSVG({ value, min, max, unit = "", label = "Value", i
   );
 }
 
+// Coldroom/Multi-Sensor Visualization
+export function ColdroomSVG({ 
+  temperature, 
+  humidity, 
+  power,
+  isWarning 
+}: { 
+  temperature?: { value: number; unit: string; min?: number; max?: number };
+  humidity?: { value: number; unit: string; min?: number; max?: number };
+  power?: { value: number; unit: string };
+  isWarning?: boolean;
+}) {
+  const tempColor = temperature ? (
+    temperature.value > (temperature.max || 10) ? "#ef4444" :
+    temperature.value < (temperature.min || -5) ? "#3b82f6" : "#10b981"
+  ) : "#6b7280";
+  
+  const humidityColor = humidity ? (
+    humidity.value > 80 ? "#3b82f6" :
+    humidity.value < 30 ? "#f59e0b" : "#10b981"
+  ) : "#6b7280";
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg width="280" height="200" viewBox="0 0 280 200">
+        <defs>
+          <linearGradient id="coldroomGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#e0f2fe" />
+            <stop offset="100%" stopColor="#bae6fd" />
+          </linearGradient>
+          <filter id="frost">
+            <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+          </filter>
+        </defs>
+        
+        {/* Coldroom box */}
+        <rect x="20" y="20" width="240" height="140" rx="8" fill="url(#coldroomGradient)" stroke="#0ea5e9" strokeWidth="2" />
+        
+        {/* Frost effect on edges */}
+        <rect x="20" y="20" width="240" height="10" fill="white" opacity="0.5" rx="8" />
+        
+        {/* Door */}
+        <rect x="100" y="40" width="80" height="100" rx="4" fill="#f0f9ff" stroke="#0ea5e9" strokeWidth="1" />
+        <circle cx="170" cy="90" r="4" fill="#64748b" />
+        
+        {/* Temperature display */}
+        <g transform="translate(30, 50)">
+          <rect width="60" height="70" rx="6" fill="white" stroke="#e2e8f0" />
+          <text x="30" y="20" textAnchor="middle" fontSize="10" fill="#64748b">TEMP</text>
+          <text x="30" y="45" textAnchor="middle" fontSize="20" fontWeight="bold" fill={tempColor}>
+            {temperature?.value.toFixed(1) || "--"}
+          </text>
+          <text x="30" y="60" textAnchor="middle" fontSize="10" fill="#94a3b8">
+            {temperature?.unit || "°C"}
+          </text>
+        </g>
+        
+        {/* Humidity display */}
+        <g transform="translate(190, 50)">
+          <rect width="60" height="70" rx="6" fill="white" stroke="#e2e8f0" />
+          <text x="30" y="20" textAnchor="middle" fontSize="10" fill="#64748b">HUMID</text>
+          <text x="30" y="45" textAnchor="middle" fontSize="20" fontWeight="bold" fill={humidityColor}>
+            {humidity?.value.toFixed(1) || "--"}
+          </text>
+          <text x="30" y="60" textAnchor="middle" fontSize="10" fill="#94a3b8">
+            {humidity?.unit || "%"}
+          </text>
+        </g>
+        
+        {/* Power indicator */}
+        {power && (
+          <g transform="translate(115, 170)">
+            <rect width="50" height="24" rx="4" fill="#fef3c7" stroke="#f59e0b" />
+            <text x="25" y="16" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#d97706">
+              ⚡ {power.value.toFixed(1)}{power.unit}
+            </text>
+          </g>
+        )}
+        
+        {/* Warning indicator */}
+        {isWarning && (
+          <g transform="translate(230, 10)">
+            <circle r="12" fill="#fef2f2" stroke="#ef4444" strokeWidth="2" />
+            <text y="4" textAnchor="middle" fontSize="14" fill="#ef4444">!</text>
+          </g>
+        )}
+      </svg>
+      <p className="text-sm font-medium text-gray-600 mt-1">Coldroom Status</p>
+    </div>
+  );
+}
+
+// Multi-Category Dashboard Card
+export function MultiCategoryCard({
+  categories,
+}: {
+  categories: Array<{
+    name: string;
+    icon: React.ReactNode;
+    color: string;
+    variables: Array<{ label: string; value: number; unit: string }>;
+  }>;
+}) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {categories.map((cat, idx) => (
+        <div 
+          key={idx} 
+          className={`p-4 rounded-xl border-2 ${cat.color}`}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            {cat.icon}
+            <span className="font-semibold text-gray-900">{cat.name}</span>
+          </div>
+          <div className="space-y-2">
+            {cat.variables.map((v, i) => (
+              <div key={i} className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">{v.label}</span>
+                <span className="font-mono font-semibold">
+                  {v.value.toFixed(1)} {v.unit}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Device Health Overview SVG
 export function DeviceHealthSVG({ 
   healthScore, 

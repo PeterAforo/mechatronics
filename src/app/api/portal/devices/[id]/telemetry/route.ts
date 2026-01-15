@@ -118,6 +118,7 @@ export async function GET(
       code: v.variableCode,
       label: v.label,
       unit: v.unit,
+      category: v.variableCategory,
       minValue: v.minValue ? Number(v.minValue) : null,
       maxValue: v.maxValue ? Number(v.maxValue) : null,
       widget: v.displayWidget,
