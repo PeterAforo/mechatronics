@@ -10,12 +10,24 @@ export async function GET() {
 
   const deviceTypes = await prisma.deviceType.findMany({
     orderBy: { createdAt: "desc" },
+    include: {
+      variables: {
+        orderBy: { displayOrder: "asc" },
+      },
+    },
   });
 
-  return NextResponse.json(deviceTypes.map(dt => ({
-    ...dt,
-    id: dt.id.toString(),
-  })));
+  return NextResponse.json({
+    deviceTypes: deviceTypes.map(dt => ({
+      ...dt,
+      id: dt.id.toString(),
+      variables: dt.variables.map(v => ({
+        variableCode: v.variableCode,
+        label: v.label,
+        unit: v.unit,
+      })),
+    })),
+  });
 }
 
 export async function POST(req: NextRequest) {
