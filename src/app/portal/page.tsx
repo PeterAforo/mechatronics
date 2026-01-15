@@ -95,9 +95,13 @@ export default async function TenantPortalPage() {
     take: 5,
   }) : [];
 
-  // Calculate stats
-  const activeDevices = devices.filter(d => d.status === "active");
-  const devicesOnline = activeDevices.length;
+  // Calculate stats based on telemetry activity (3-hour threshold)
+  const now = new Date();
+  const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+  
+  // Online = has sent telemetry data within last 3 hours
+  const devicesOnline = devices.filter(d => d.lastSeenAt && d.lastSeenAt >= threeHoursAgo).length;
+  const devicesOffline = devices.filter(d => !d.lastSeenAt || d.lastSeenAt < threeHoursAgo).length;
   const devicesTotal = devices.length;
 
   // Category icons mapping
@@ -111,23 +115,22 @@ export default async function TenantPortalPage() {
   const generateAIInsights = () => {
     const insights: { id: string; type: "tip" | "warning" | "recommendation"; title: string; description: string; icon: React.ReactNode }[] = [];
     
-    // Check for offline devices
-    const offlineDevices = devices.filter(d => d.status !== "active");
+    // Check for offline devices (no data in >3 hours)
+    const offlineDevices = devices.filter(d => !d.lastSeenAt || d.lastSeenAt < threeHoursAgo);
     if (offlineDevices.length > 0) {
       insights.push({
         id: "offline",
         type: "warning",
         title: "Devices Offline",
-        description: `${offlineDevices.length} device(s) are currently offline. Check connectivity or power supply.`,
+        description: `${offlineDevices.length} device(s) haven't sent data in over 3 hours. Check connectivity or power supply.`,
         icon: <WifiOff className="h-5 w-5 text-red-500" />,
       });
     }
 
-    // Check for devices with no recent data
+    // Check for devices with no recent data (>24 hours but not in the offline warning)
     const staleDevices = devices.filter(d => {
-      const telemetry = telemetryByDevice.get(d.id.toString());
-      if (!telemetry) return true;
-      const hoursSinceLastData = (Date.now() - new Date(telemetry.capturedAt).getTime()) / (1000 * 60 * 60);
+      if (!d.lastSeenAt) return false; // Already counted as offline
+      const hoursSinceLastData = (now.getTime() - d.lastSeenAt.getTime()) / (1000 * 60 * 60);
       return hoursSinceLastData > 24;
     });
     if (staleDevices.length > 0 && staleDevices.length < devices.length) {
@@ -205,7 +208,8 @@ export default async function TenantPortalPage() {
                 {subscriptions.map((sub) => {
                   const device = sub.tenantDevices?.[0]; // Get first device for this subscription
                   const telemetry = device ? telemetryByDevice.get(device.id.toString()) : null;
-                  const isOnline = device?.status === "active";
+                  // Online = has sent data within last 3 hours
+                  const isOnline = device?.lastSeenAt && device.lastSeenAt >= threeHoursAgo;
                   const lastDataTime = telemetry?.capturedAt;
                   const readings = telemetry?.readings;
                   
@@ -331,7 +335,8 @@ export default async function TenantPortalPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {devices.map((device) => {
                   const telemetry = telemetryByDevice.get(device.id.toString());
-                  const isOnline = device.status === "active";
+                  // Online = has sent data within last 3 hours
+                  const isOnline = device.lastSeenAt && device.lastSeenAt >= threeHoursAgo;
                   
                   return (
                     <Link

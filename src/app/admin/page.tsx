@@ -27,17 +27,25 @@ export default async function AdminPortalPage() {
     activeSubscriptionCount,
     pendingOrderCount,
     totalOrderCount,
-    activeDeviceCount,
-    inactiveDeviceCount,
+    allDevices,
   ] = await Promise.all([
     prisma.tenant.count(),
     prisma.deviceInventory.count(),
     prisma.subscription.count({ where: { status: "active" } }),
     prisma.order.count({ where: { status: "pending" } }),
     prisma.order.count(),
-    prisma.tenantDevice.count({ where: { status: "active" } }),
-    prisma.tenantDevice.count({ where: { status: { not: "active" } } }),
+    prisma.tenantDevice.findMany({
+      where: { status: "active" },
+      select: { id: true, lastSeenAt: true },
+    }),
   ]);
+
+  // Calculate online/offline based on telemetry activity (3-hour threshold)
+  const now = new Date();
+  const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+  
+  const activeDeviceCount = allDevices.filter(d => d.lastSeenAt && d.lastSeenAt >= threeHoursAgo).length;
+  const inactiveDeviceCount = allDevices.filter(d => !d.lastSeenAt || d.lastSeenAt < threeHoursAgo).length;
 
   // Get total revenue from paid orders
   const paidOrders = await prisma.order.findMany({
