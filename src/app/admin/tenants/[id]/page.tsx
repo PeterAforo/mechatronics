@@ -1,11 +1,11 @@
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Building2, Mail, Phone, MapPin, Calendar, Users, Cpu, Copy, Link2 } from "lucide-react";
+import { ArrowLeft, Building2, Mail, Phone, MapPin, Calendar, Users, Cpu, Link2 } from "lucide-react";
 import { CopyButton } from "@/components/ui/copy-button";
 import AssignDeviceDialog from "./AssignDeviceDialog";
+import TenantActions from "./TenantActions";
 
 export default async function TenantDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -66,6 +66,19 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <TenantActions 
+              tenant={{
+                id: tenant.id.toString(),
+                companyName: tenant.companyName,
+                contactName: tenant.contactName,
+                email: tenant.email,
+                phone: tenant.phone,
+                address: tenant.address,
+                city: tenant.city,
+                country: tenant.country,
+                status: tenant.status,
+              }}
+            />
             <AssignDeviceDialog tenantId={id} tenantName={tenant.companyName} />
             <Badge variant="outline" className={statusColors[tenant.status] || statusColors.pending}>
               {tenant.status}
