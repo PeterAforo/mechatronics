@@ -123,15 +123,35 @@ export default async function AdminPortalPage() {
     },
   });
 
-  // Inactive devices
-  const inactiveDevicesList = await prisma.tenantDevice.findMany({
-    where: { status: { not: "active" } },
+  // Inactive devices - devices that haven't sent telemetry in 3+ hours
+  const inactiveDevicesRaw = await prisma.tenantDevice.findMany({
+    where: {
+      status: "active",
+      OR: [
+        { lastSeenAt: null },
+        { lastSeenAt: { lt: threeHoursAgo } },
+      ],
+    },
     take: 5,
+    orderBy: { lastSeenAt: "asc" },
     include: {
       inventory: { include: { deviceType: true } },
       subscription: { include: { product: true } },
     },
   });
+
+  // Fetch tenant names for inactive devices
+  const tenantIds = [...new Set(inactiveDevicesRaw.map(d => d.tenantId))];
+  const tenants = await prisma.tenant.findMany({
+    where: { id: { in: tenantIds } },
+    select: { id: true, companyName: true },
+  });
+  const tenantMap = new Map(tenants.map(t => [t.id.toString(), t.companyName]));
+
+  const inactiveDevicesList = inactiveDevicesRaw.map(device => ({
+    ...device,
+    tenantName: tenantMap.get(device.tenantId.toString()) || "Unknown tenant",
+  }));
 
   // Stats object for charts
   const stats = {
@@ -300,33 +320,42 @@ export default async function AdminPortalPage() {
                 <p className="text-sm text-gray-500">Devices requiring attention</p>
               </div>
               <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                {inactiveDevicesList.length} Inactive
+                {inactiveDeviceCount} Inactive
               </Badge>
             </div>
             <div className="space-y-3">
-              {inactiveDevicesList.length > 0 ? inactiveDevicesList.map((device) => (
-                <div 
-                  key={device.id.toString()}
-                  className="flex items-center justify-between p-4 bg-red-50 rounded-xl"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-red-100">
-                      <WifiOff className="h-5 w-5 text-red-600" />
+              {inactiveDevicesList.length > 0 ? inactiveDevicesList.map((device) => {
+                const lastSeen = device.lastSeenAt 
+                  ? new Date(device.lastSeenAt).toLocaleString()
+                  : "Never";
+                return (
+                  <Link 
+                    key={device.id.toString()}
+                    href={`/admin/devices`}
+                    className="flex items-center justify-between p-4 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-red-100">
+                        <WifiOff className="h-5 w-5 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {device.nickname || device.inventory.serialNumber || `Device ${device.id}`}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {device.tenantName} • {device.inventory.deviceType?.name || "Unknown type"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {device.nickname || device.subscription?.product?.name || `Device ${device.id}`}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {device.inventory?.serialNumber || "No serial"} • {device.inventory?.deviceType?.name || "Unknown type"}
-                      </p>
+                    <div className="text-right">
+                      <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200">
+                        Offline
+                      </Badge>
+                      <p className="text-xs text-gray-500 mt-1">Last: {lastSeen}</p>
                     </div>
-                  </div>
-                  <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200">
-                    {device.status}
-                  </Badge>
-                </div>
-              )) : (
+                  </Link>
+                );
+              }) : (
                 <div className="text-center py-8 text-gray-500">
                   <Wifi className="h-10 w-10 text-green-300 mx-auto mb-3" />
                   <p>All devices are active</p>
