@@ -19,10 +19,12 @@ export const metadata: Metadata = {
   description: "Smart IoT monitoring solutions for water, power, and environmental systems",
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
     ],
-    apple: "/icon.svg",
+    apple: "/icon-192.svg",
   },
+  manifest: "/manifest.json",
+  themeColor: "#1f2937",
 };
 
 export default function RootLayout({

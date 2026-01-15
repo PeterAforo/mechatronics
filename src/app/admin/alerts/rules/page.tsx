@@ -2,12 +2,11 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
-  Bell, Plus, ChevronRight, AlertTriangle, Settings,
-  Mail, MessageSquare, Webhook, Clock
+  Bell, Plus, Mail, MessageSquare, Webhook, Clock
 } from "lucide-react";
+import AlertRulesList from "./AlertRulesList";
 
 export default async function AlertRulesPage() {
   const session = await auth();
@@ -26,22 +25,17 @@ export default async function AlertRulesPage() {
 
   const deviceTypeMap = new Map(deviceTypes.map(dt => [dt.id.toString(), dt]));
 
-  const severityColors = {
-    info: "bg-blue-50 text-blue-700 border-blue-200",
-    warning: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    critical: "bg-red-50 text-red-700 border-red-200",
-  };
-
-  const operatorLabels: Record<string, string> = {
-    lt: "Less than",
-    lte: "Less than or equal",
-    eq: "Equal to",
-    neq: "Not equal to",
-    gte: "Greater than or equal",
-    gt: "Greater than",
-    between: "Between",
-    outside: "Outside range",
-  };
+  const serializedRules = alertRules.map((rule) => ({
+    id: rule.id.toString(),
+    ruleName: rule.ruleName,
+    deviceTypeName: deviceTypeMap.get(rule.deviceTypeId.toString())?.name || "Unknown",
+    variableCode: rule.variableCode,
+    operator: rule.operator,
+    threshold1: Number(rule.threshold1),
+    threshold2: rule.threshold2 ? Number(rule.threshold2) : null,
+    severity: rule.severity,
+    isActive: rule.isActive,
+  }));
 
   return (
     <main className="p-4 md:p-6">
@@ -111,67 +105,7 @@ export default async function AlertRulesPage() {
         <div className="p-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900">Configured Rules</h2>
         </div>
-
-        <div className="divide-y divide-gray-100">
-          {alertRules.length > 0 ? alertRules.map((rule) => {
-            const deviceType = deviceTypeMap.get(rule.deviceTypeId.toString());
-            return (
-              <div
-                key={rule.id.toString()}
-                className="p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg ${
-                      rule.severity === "critical" ? "bg-red-50" :
-                      rule.severity === "warning" ? "bg-yellow-50" : "bg-blue-50"
-                    }`}>
-                      <AlertTriangle className={`h-5 w-5 ${
-                        rule.severity === "critical" ? "text-red-600" :
-                        rule.severity === "warning" ? "text-yellow-600" : "text-blue-600"
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{rule.ruleName}</p>
-                      <p className="text-sm text-gray-500">
-                        {deviceType?.name || "Unknown"} • {rule.variableCode} {operatorLabels[rule.operator]} {Number(rule.threshold1)}
-                        {rule.threshold2 && ` - ${Number(rule.threshold2)}`}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <Badge variant="outline" className={severityColors[rule.severity]}>
-                      {rule.severity}
-                    </Badge>
-                    <Badge variant="outline" className={
-                      rule.isActive 
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : "bg-gray-50 text-gray-600 border-gray-200"
-                    }>
-                      {rule.isActive ? "Active" : "Disabled"}
-                    </Badge>
-                    <Link href={`/admin/alerts/rules/${rule.id}`}>
-                      <Button variant="ghost" size="sm">
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            );
-          }) : (
-            <div className="p-12 text-center">
-              <Bell className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No alert rules configured</p>
-              <Link href="/admin/alerts/rules/new">
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  Create Your First Rule
-                </Button>
-              </Link>
-            </div>
-          )}
-        </div>
+        <AlertRulesList rules={serializedRules} />
       </div>
 
       {/* Escalation Settings */}
