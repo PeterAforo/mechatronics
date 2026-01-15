@@ -9,6 +9,9 @@ import {
   ShoppingCart
 } from "lucide-react";
 
+// Force dynamic rendering - database queries can't run at build time
+export const dynamic = "force-dynamic";
+
 const categoryIcons: Record<string, React.ElementType> = {
   water: Droplets,
   power: Zap,

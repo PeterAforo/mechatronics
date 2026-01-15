@@ -1,6 +1,9 @@
 import prisma from "@/lib/prisma";
 import LandingPage from "@/components/landing/LandingPage";
 
+// Force dynamic rendering - database queries can't run at build time
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   // Fetch published products from database
   const products = await prisma.deviceProduct.findMany({
