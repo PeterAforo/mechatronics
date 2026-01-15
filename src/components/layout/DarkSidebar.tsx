@@ -200,19 +200,16 @@ export function DarkSidebar({
       {/* Logo Section */}
       <div className="h-20 flex items-center px-6">
         <Link href={baseHref} className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
-            <svg 
-              className="w-6 h-6 text-white" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M13 10V3L4 14h7v7l9-11h-7z" 
-              />
+          <div className="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center p-1.5">
+            <svg viewBox="0 0 32 32" fill="none" className="w-full h-full">
+              <rect x="5" y="10" width="4" height="16" rx="1.5" fill="white"/>
+              <rect x="11" y="6" width="4" height="20" rx="1.5" fill="white"/>
+              <rect x="17" y="8" width="4" height="18" rx="1.5" fill="white"/>
+              <circle cx="7" cy="7" r="2" fill="white"/>
+              <circle cx="13" cy="3" r="2" fill="white"/>
+              <circle cx="19" cy="5" r="2" fill="white"/>
+              <path d="M7 7 L13 3" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+              <path d="M13 3 L19 5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
             </svg>
           </div>
           <span className="text-xl font-bold text-white">{brandName}</span>
