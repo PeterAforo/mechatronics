@@ -20,20 +20,24 @@ export default function PageHeader({
   title,
   subtitle,
   breadcrumbs = [],
-  backgroundImage = "/images/page-header-bg.jpg",
+  backgroundImage,
 }: PageHeaderProps) {
   return (
     <section className="relative h-64 md:h-80 overflow-hidden">
-      {/* Parallax Background */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-fixed"
-        style={{
-          backgroundImage: `url(${backgroundImage})`,
-        }}
-      />
+      {/* Background - use image if provided, otherwise gradient */}
+      {backgroundImage ? (
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-fixed"
+          style={{
+            backgroundImage: `url(${backgroundImage})`,
+          }}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-900 to-gray-950" />
+      )}
       
       {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 to-gray-900/70" />
+      <div className="absolute inset-0 bg-gradient-to-r from-gray-900/80 to-gray-900/60" />
 
       {/* Content */}
       <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
