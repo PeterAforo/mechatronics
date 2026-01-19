@@ -469,11 +469,14 @@ export default function LandingPage({ products }: { products: Product[] }) {
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </Button>
                     </Link>
-                    <button onClick={() => scrollToSection("products")}>
-                      <Button size="lg" variant="outline" className="border-white/50 text-white hover:bg-white/10 rounded-lg px-8 py-6 text-lg">
-                        View Products
-                      </Button>
-                    </button>
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      className="border-white/50 text-white hover:bg-white/10 rounded-lg px-8 py-6 text-lg"
+                      onClick={() => scrollToSection("products")}
+                    >
+                      View Products
+                    </Button>
                   </div>
                 </div>
                 <div className="hidden lg:block relative h-full min-h-[400px]">
