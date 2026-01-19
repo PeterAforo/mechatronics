@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     where.tenantId = BigInt(tenantId);
   }
 
-  const [messages, total] = await Promise.all([
+  const [messages, total, statusCounts] = await Promise.all([
     prisma.inboundMessage.findMany({
       where,
       orderBy: { receivedAt: "desc" },
@@ -38,7 +38,21 @@ export async function GET(request: NextRequest) {
       skip,
     }),
     prisma.inboundMessage.count({ where }),
+    prisma.inboundMessage.groupBy({
+      by: ["parseStatus"],
+      _count: { id: true },
+    }),
   ]);
+
+  // Build status counts map
+  const counts = {
+    parsed: 0,
+    pending: 0,
+    failed: 0,
+  };
+  statusCounts.forEach((s) => {
+    counts[s.parseStatus as keyof typeof counts] = s._count.id;
+  });
 
   // Get tenant info separately if needed
   const tenantIds = [...new Set(messages.filter(m => m.tenantId).map(m => m.tenantId!))];
@@ -74,5 +88,6 @@ export async function GET(request: NextRequest) {
       total,
       totalPages: Math.ceil(total / limit),
     },
+    counts,
   });
 }

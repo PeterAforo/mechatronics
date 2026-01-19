@@ -31,6 +31,12 @@ interface Pagination {
   totalPages: number;
 }
 
+interface StatusCounts {
+  parsed: number;
+  pending: number;
+  failed: number;
+}
+
 export default function TelemetryPage() {
   const [messages, setMessages] = useState<TelemetryMessage[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
@@ -39,6 +45,7 @@ export default function TelemetryPage() {
     total: 0,
     totalPages: 0,
   });
+  const [counts, setCounts] = useState<StatusCounts>({ parsed: 0, pending: 0, failed: 0 });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(false);
@@ -54,6 +61,7 @@ export default function TelemetryPage() {
       const data = await res.json();
       setMessages(data.messages || []);
       setPagination(data.pagination || { page: 1, limit: 50, total: 0, totalPages: 0 });
+      setCounts(data.counts || { parsed: 0, pending: 0, failed: 0 });
     } catch (error) {
       console.error("Failed to fetch telemetry:", error);
     } finally {
@@ -77,7 +85,7 @@ export default function TelemetryPage() {
   };
 
   const statusColors: Record<string, string> = {
-    processed: "border-green-200 bg-green-50 text-green-700",
+    parsed: "border-green-200 bg-green-50 text-green-700",
     pending: "border-yellow-200 bg-yellow-50 text-yellow-700",
     failed: "border-red-200 bg-red-50 text-red-700",
   };
@@ -141,9 +149,9 @@ export default function TelemetryPage() {
               <Cpu className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Processed</p>
+              <p className="text-sm text-gray-500">Parsed</p>
               <p className="text-xl font-semibold text-gray-900">
-                {messages.filter((m) => m.status === "processed").length}
+                {counts.parsed}
               </p>
             </div>
           </div>
@@ -156,7 +164,7 @@ export default function TelemetryPage() {
             <div>
               <p className="text-sm text-gray-500">Pending</p>
               <p className="text-xl font-semibold text-gray-900">
-                {messages.filter((m) => m.status === "pending").length}
+                {counts.pending}
               </p>
             </div>
           </div>
