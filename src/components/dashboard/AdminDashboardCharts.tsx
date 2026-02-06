@@ -134,9 +134,17 @@ export function AdminDashboardCharts({
   revenueGrowth,
   customerGrowth,
 }: AdminDashboardChartsProps) {
+  // Ensure data is always an array - use state to prevent hydration issues
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Ensure data is always an array
-  const safeMonthlyRevenue = Array.isArray(monthlyRevenue) ? monthlyRevenue : [];
-  const safeDevicesByCategory = Array.isArray(devicesByCategory) ? devicesByCategory : [];
+  const safeMonthlyRevenue = Array.isArray(monthlyRevenue) ? [...monthlyRevenue] : [];
+  const safeDevicesByCategory = Array.isArray(devicesByCategory) ? [...devicesByCategory] : [];
+  
   return (
     <div className="space-y-6">
       {/* Stats Cards Grid */}
@@ -223,6 +231,7 @@ export function AdminDashboardCharts({
             </div>
           </div>
           <div className="h-64 w-full min-w-0">
+            {mounted && safeMonthlyRevenue.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
               <AreaChart data={safeMonthlyRevenue}>
                 <defs>
@@ -252,6 +261,11 @@ export function AdminDashboardCharts({
                 />
               </AreaChart>
             </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400">
+                Loading chart...
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -269,7 +283,7 @@ export function AdminDashboardCharts({
             </div>
           </div>
           <div className="h-64 w-full min-w-0">
-            {safeDevicesByCategory.length > 0 ? (
+            {mounted && safeDevicesByCategory.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
                 <PieChart>
                   <Pie
@@ -305,7 +319,7 @@ export function AdminDashboardCharts({
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center text-gray-400">
-                No device data available
+                {mounted ? "No device data available" : "Loading chart..."}
               </div>
             )}
           </div>
