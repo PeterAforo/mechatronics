@@ -2,14 +2,16 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload, Package, Boxes, ShoppingCart, AlertTriangle } from "lucide-react";
-import InventoryList from "./InventoryList";
+import GroupedInventoryList from "./GroupedInventoryList";
 
 export default async function InventoryPage() {
-  // Fetch all products with their device types
-  const products = await prisma.deviceProduct.findMany({
-    where: { isPublished: true },
+  // Fetch all device types with their inventory counts
+  const deviceTypes = await prisma.deviceType.findMany({
     include: {
-      deviceType: true,
+      products: {
+        where: { isPublished: true },
+        select: { id: true, name: true, productCode: true },
+      },
     },
     orderBy: { name: "asc" },
   });
@@ -30,47 +32,75 @@ export default async function InventoryPage() {
     inventoryByDeviceType[dtId][item.status] = item._count.id;
   }
 
-  // Build product inventory data
-  const productInventory = products.map((product) => {
-    const dtId = product.deviceTypeId?.toString() || "";
-    const counts = inventoryByDeviceType[dtId] || { in_stock: 0, sold: 0, installed: 0, returned: 0, retired: 0 };
-    const available = counts.in_stock || 0;
-    const deployed = (counts.sold || 0) + (counts.installed || 0);
-    const total = available + deployed + (counts.returned || 0) + (counts.retired || 0);
-    
-    return {
-      id: product.id.toString(),
-      name: product.name,
-      productCode: product.productCode,
-      category: product.category,
-      deviceTypeName: product.deviceType?.name || "No device type",
-      available,
-      deployed,
-      total,
-      lowStock: available < 5 && total > 0,
-    };
-  });
+  // Build device type inventory data (not duplicated across products)
+  const deviceTypeInventory = deviceTypes
+    .filter((dt) => inventoryByDeviceType[dt.id.toString()]) // Only show device types with inventory
+    .map((dt) => {
+      const dtId = dt.id.toString();
+      const counts = inventoryByDeviceType[dtId] || { in_stock: 0, sold: 0, installed: 0, returned: 0, retired: 0 };
+      const available = counts.in_stock || 0;
+      const deployed = (counts.sold || 0) + (counts.installed || 0);
+      const total = available + deployed + (counts.returned || 0) + (counts.retired || 0);
+      
+      return {
+        id: dtId,
+        name: dt.name,
+        typeCode: dt.typeCode,
+        products: dt.products.map((p) => p.name).join(", ") || "No products",
+        available,
+        deployed,
+        total,
+        lowStock: available < 5 && total > 0,
+      };
+    });
 
-  // Fetch all inventory for the list
+  // Fetch all inventory for the list, grouped by device type
   const inventory = await prisma.deviceInventory.findMany({
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ deviceTypeId: "asc" }, { createdAt: "desc" }],
     include: {
       deviceType: true,
     },
   });
 
-  const serializedInventory = inventory.map((item) => ({
-    id: item.id.toString(),
-    serialNumber: item.serialNumber,
-    imei: item.imei,
-    firmwareVersion: item.firmwareVersion,
-    status: item.status,
-    deviceTypeName: item.deviceType?.name || "Unknown",
-  }));
+  // Group inventory by device type for the list
+  const inventoryByType: Record<string, {
+    deviceTypeName: string;
+    deviceTypeId: string;
+    items: Array<{
+      id: string;
+      serialNumber: string;
+      imei: string | null;
+      firmwareVersion: string | null;
+      status: string;
+    }>;
+  }> = {};
 
-  // Calculate totals
-  const totalAvailable = productInventory.reduce((sum, p) => sum + p.available, 0);
-  const totalDeployed = productInventory.reduce((sum, p) => sum + p.deployed, 0);
+  for (const item of inventory) {
+    const dtId = item.deviceTypeId.toString();
+    const dtName = item.deviceType?.name || "Unknown";
+    
+    if (!inventoryByType[dtId]) {
+      inventoryByType[dtId] = {
+        deviceTypeName: dtName,
+        deviceTypeId: dtId,
+        items: [],
+      };
+    }
+    
+    inventoryByType[dtId].items.push({
+      id: item.id.toString(),
+      serialNumber: item.serialNumber,
+      imei: item.imei,
+      firmwareVersion: item.firmwareVersion,
+      status: item.status,
+    });
+  }
+
+  const groupedInventory = Object.values(inventoryByType);
+
+  // Calculate totals from actual inventory counts
+  const totalAvailable = deviceTypeInventory.reduce((sum, dt) => sum + dt.available, 0);
+  const totalDeployed = deviceTypeInventory.reduce((sum, dt) => sum + dt.deployed, 0);
   const totalUnits = inventory.length;
 
   return (
@@ -133,21 +163,21 @@ export default async function InventoryPage() {
         </div>
       </div>
 
-      {/* Product Inventory Cards */}
+      {/* Device Type Inventory Cards */}
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Inventory by Product</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Inventory by Device Type</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {productInventory.map((product) => (
+          {deviceTypeInventory.map((dt) => (
             <div
-              key={product.id}
+              key={dt.id}
               className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                  <p className="text-xs text-gray-500">{product.productCode} • {product.deviceTypeName}</p>
+                  <h3 className="font-semibold text-gray-900">{dt.name}</h3>
+                  <p className="text-xs text-gray-500">{dt.typeCode} • {dt.products}</p>
                 </div>
-                {product.lowStock && (
+                {dt.lowStock && (
                   <div className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-full text-xs font-medium">
                     <AlertTriangle className="h-3 w-3" />
                     Low Stock
@@ -159,18 +189,18 @@ export default async function InventoryPage() {
               <div className="mb-3">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-500">Stock Level</span>
-                  <span className="font-medium text-gray-900">{product.total} units</span>
+                  <span className="font-medium text-gray-900">{dt.total} units</span>
                 </div>
                 <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                  {product.total > 0 ? (
+                  {dt.total > 0 ? (
                     <>
                       <div
                         className="h-full bg-green-500 float-left"
-                        style={{ width: `${(product.available / product.total) * 100}%` }}
+                        style={{ width: `${(dt.available / dt.total) * 100}%` }}
                       />
                       <div
                         className="h-full bg-blue-500 float-left"
-                        style={{ width: `${(product.deployed / product.total) * 100}%` }}
+                        style={{ width: `${(dt.deployed / dt.total) * 100}%` }}
                       />
                     </>
                   ) : (
@@ -183,25 +213,25 @@ export default async function InventoryPage() {
               <div className="flex justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                  <span className="text-gray-600">Available: <span className="font-semibold text-gray-900">{product.available}</span></span>
+                  <span className="text-gray-600">Available: <span className="font-semibold text-gray-900">{dt.available}</span></span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  <span className="text-gray-600">Deployed: <span className="font-semibold text-gray-900">{product.deployed}</span></span>
+                  <span className="text-gray-600">Deployed: <span className="font-semibold text-gray-900">{dt.deployed}</span></span>
                 </div>
               </div>
             </div>
           ))}
           
-          {productInventory.length === 0 && (
+          {deviceTypeInventory.length === 0 && (
             <div className="col-span-full text-center py-8 text-gray-500">
-              No products found. <Link href="/admin/products" className="text-purple-600 hover:underline">Add products</Link> to track inventory.
+              No inventory found. <Link href="/admin/inventory/new" className="text-purple-600 hover:underline">Add devices</Link> to track inventory.
             </div>
           )}
         </div>
       </div>
 
-      <InventoryList inventory={serializedInventory} />
+      <GroupedInventoryList groups={groupedInventory} />
     </main>
   );
 }
