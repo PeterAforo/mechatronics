@@ -280,7 +280,7 @@ export function AdminDashboardCharts({
                     animationBegin={0}
                     animationDuration={1500}
                   >
-                    {devicesByCategory.map((_, index) => (
+                    {Array.isArray(devicesByCategory) && devicesByCategory.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>

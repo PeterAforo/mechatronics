@@ -234,7 +234,7 @@ export function RevenueAnalytics({
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {revenueByProduct.map((_, index) => (
+                    {Array.isArray(revenueByProduct) && revenueByProduct.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -252,7 +252,7 @@ export function RevenueAnalytics({
             )}
           </div>
           <div className="space-y-3">
-            {revenueByProduct.map((product, idx) => (
+            {Array.isArray(revenueByProduct) && revenueByProduct.map((product, idx) => (
               <div key={product.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />

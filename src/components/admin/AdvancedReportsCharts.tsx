@@ -289,7 +289,7 @@ export function AdvancedReportsCharts({
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {categoryData.map((_, index) => (
+                    {Array.isArray(categoryData) && categoryData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
