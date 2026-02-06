@@ -52,11 +52,14 @@ export function RevenueAnalytics({
   churnRate,
   revenueGrowth,
   customerGrowth,
-  monthlyData,
-  revenueByProduct,
+  monthlyData = [],
+  revenueByProduct = [],
   totalCustomers,
   activeSubscriptions,
 }: RevenueAnalyticsProps) {
+  // Ensure data is always an array
+  const safeMonthlyData = Array.isArray(monthlyData) ? monthlyData : [];
+  const safeRevenueByProduct = Array.isArray(revenueByProduct) ? revenueByProduct : [];
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
@@ -167,7 +170,7 @@ export function RevenueAnalytics({
           <h3 className="font-semibold text-gray-900 mb-4">Revenue Trend</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-              <AreaChart data={Array.isArray(monthlyData) ? monthlyData : []}>
+              <AreaChart data={safeMonthlyData}>
                 <defs>
                   <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
@@ -197,7 +200,7 @@ export function RevenueAnalytics({
           <h3 className="font-semibold text-gray-900 mb-4">Orders by Month</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-              <BarChart data={Array.isArray(monthlyData) ? monthlyData : []}>
+              <BarChart data={safeMonthlyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                 <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
@@ -222,11 +225,11 @@ export function RevenueAnalytics({
         <h3 className="font-semibold text-gray-900 mb-4">Revenue by Product</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="h-64">
-            {Array.isArray(revenueByProduct) && revenueByProduct.length > 0 ? (
+            {safeRevenueByProduct.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <PieChart>
                   <Pie
-                    data={revenueByProduct}
+                    data={safeRevenueByProduct}
                     cx="50%"
                     cy="50%"
                     innerRadius={50}
@@ -234,7 +237,7 @@ export function RevenueAnalytics({
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {Array.isArray(revenueByProduct) && revenueByProduct.map((_, index) => (
+                    {safeRevenueByProduct.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -252,7 +255,7 @@ export function RevenueAnalytics({
             )}
           </div>
           <div className="space-y-3">
-            {Array.isArray(revenueByProduct) && revenueByProduct.map((product, idx) => (
+            {safeRevenueByProduct.map((product, idx) => (
               <div key={product.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />

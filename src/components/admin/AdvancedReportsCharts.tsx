@@ -56,15 +56,19 @@ interface AdvancedReportsChartsProps {
 const COLORS = ["#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899"];
 
 export function AdvancedReportsCharts({
-  revenueData,
-  categoryData,
-  subscriptionData,
+  revenueData = [],
+  categoryData = [],
+  subscriptionData = [],
   totalRevenue,
   totalOrders,
   avgOrderValue,
   revenueGrowth,
   orderGrowth,
 }: AdvancedReportsChartsProps) {
+  // Ensure data is always an array
+  const safeRevenueData = Array.isArray(revenueData) ? revenueData : [];
+  const safeCategoryData = Array.isArray(categoryData) ? categoryData : [];
+  const safeSubscriptionData = Array.isArray(subscriptionData) ? subscriptionData : [];
   const [dateRange, setDateRange] = useState("30d");
   const [exporting, setExporting] = useState(false);
 
@@ -207,7 +211,7 @@ export function AdvancedReportsCharts({
           <h3 className="font-semibold text-gray-900 mb-4">Revenue Trend</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-              <AreaChart data={Array.isArray(revenueData) ? revenueData : []}>
+              <AreaChart data={safeRevenueData}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
@@ -247,7 +251,7 @@ export function AdvancedReportsCharts({
           <h3 className="font-semibold text-gray-900 mb-4">Orders Trend</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-              <BarChart data={Array.isArray(revenueData) ? revenueData : []}>
+              <BarChart data={safeRevenueData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                 <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
@@ -277,11 +281,11 @@ export function AdvancedReportsCharts({
         >
           <h3 className="font-semibold text-gray-900 mb-4">Revenue by Category</h3>
           <div className="h-72">
-            {Array.isArray(categoryData) && categoryData.length > 0 ? (
+            {safeCategoryData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <PieChart>
                   <Pie
-                    data={categoryData}
+                    data={safeCategoryData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -289,7 +293,7 @@ export function AdvancedReportsCharts({
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {Array.isArray(categoryData) && categoryData.map((_, index) => (
+                    {safeCategoryData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -321,9 +325,9 @@ export function AdvancedReportsCharts({
         >
           <h3 className="font-semibold text-gray-900 mb-4">Subscription Status</h3>
           <div className="h-72">
-            {Array.isArray(subscriptionData) && subscriptionData.length > 0 ? (
+            {safeSubscriptionData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-                <BarChart data={subscriptionData} layout="vertical">
+                <BarChart data={safeSubscriptionData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis type="number" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                   <YAxis dataKey="status" type="category" tick={{ fontSize: 12 }} stroke="#9ca3af" width={80} />

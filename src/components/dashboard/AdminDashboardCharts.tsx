@@ -129,11 +129,14 @@ const COLORS = ["#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899"
 
 export function AdminDashboardCharts({
   stats,
-  monthlyRevenue,
-  devicesByCategory,
+  monthlyRevenue = [],
+  devicesByCategory = [],
   revenueGrowth,
   customerGrowth,
 }: AdminDashboardChartsProps) {
+  // Ensure data is always an array
+  const safeMonthlyRevenue = Array.isArray(monthlyRevenue) ? monthlyRevenue : [];
+  const safeDevicesByCategory = Array.isArray(devicesByCategory) ? devicesByCategory : [];
   return (
     <div className="space-y-6">
       {/* Stats Cards Grid */}
@@ -221,7 +224,7 @@ export function AdminDashboardCharts({
           </div>
           <div className="h-64 w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
-              <AreaChart data={Array.isArray(monthlyRevenue) ? monthlyRevenue : []}>
+              <AreaChart data={safeMonthlyRevenue}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
@@ -266,11 +269,11 @@ export function AdminDashboardCharts({
             </div>
           </div>
           <div className="h-64 w-full min-w-0">
-            {Array.isArray(devicesByCategory) && devicesByCategory.length > 0 ? (
+            {safeDevicesByCategory.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
                 <PieChart>
                   <Pie
-                    data={devicesByCategory}
+                    data={safeDevicesByCategory}
                     cx="50%"
                     cy="50%"
                     innerRadius={50}
@@ -280,7 +283,7 @@ export function AdminDashboardCharts({
                     animationBegin={0}
                     animationDuration={1500}
                   >
-                    {Array.isArray(devicesByCategory) && devicesByCategory.map((_, index) => (
+                    {safeDevicesByCategory.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
