@@ -63,7 +63,10 @@ export default function FirmwarePage() {
       ]);
       
       if (fwRes.ok) setFirmware(await fwRes.json());
-      if (dtRes.ok) setDeviceTypes(await dtRes.json());
+      if (dtRes.ok) {
+        const dtData = await dtRes.json();
+        setDeviceTypes(Array.isArray(dtData) ? dtData : (dtData.deviceTypes || []));
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {

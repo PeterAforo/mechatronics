@@ -38,7 +38,8 @@ export default function NewInventoryPage() {
       const res = await fetch("/api/admin/device-types");
       if (res.ok) {
         const data = await res.json();
-        setDeviceTypes(data);
+        // API returns { deviceTypes: [...] }, extract the array
+        setDeviceTypes(Array.isArray(data) ? data : (data.deviceTypes || []));
       }
     };
     fetchDeviceTypes();

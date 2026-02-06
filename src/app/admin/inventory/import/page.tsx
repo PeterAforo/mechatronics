@@ -38,7 +38,8 @@ export default function ImportInventoryPage() {
     try {
       const res = await fetch("/api/admin/device-types");
       if (res.ok) {
-        setDeviceTypes(await res.json());
+        const data = await res.json();
+        setDeviceTypes(Array.isArray(data) ? data : (data.deviceTypes || []));
       }
     } catch (error) {
       console.error("Error fetching device types:", error);
