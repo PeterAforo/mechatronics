@@ -205,8 +205,8 @@ export function FrostLinkDashboard({ deviceId }: FrostLinkDashboardProps) {
             </CardHeader>
             <CardContent>
               <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
+                <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+                  <LineChart data={Array.isArray(chartData) ? chartData : []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                     <XAxis dataKey="time" stroke="#94a3b8" />
                     <YAxis stroke="#94a3b8" domain={[-25, 0]} />

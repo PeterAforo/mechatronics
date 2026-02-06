@@ -166,8 +166,8 @@ export function RevenueAnalytics({
         >
           <h3 className="font-semibold text-gray-900 mb-4">Revenue Trend</h3>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyData}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+              <AreaChart data={Array.isArray(monthlyData) ? monthlyData : []}>
                 <defs>
                   <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
@@ -196,8 +196,8 @@ export function RevenueAnalytics({
         >
           <h3 className="font-semibold text-gray-900 mb-4">Orders by Month</h3>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+              <BarChart data={Array.isArray(monthlyData) ? monthlyData : []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                 <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
@@ -222,8 +222,8 @@ export function RevenueAnalytics({
         <h3 className="font-semibold text-gray-900 mb-4">Revenue by Product</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="h-64">
-            {revenueByProduct.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+            {Array.isArray(revenueByProduct) && revenueByProduct.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <PieChart>
                   <Pie
                     data={revenueByProduct}
