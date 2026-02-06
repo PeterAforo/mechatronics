@@ -220,8 +220,8 @@ export function AdminDashboardCharts({
             </div>
           </div>
           <div className="h-64 w-full min-w-0">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-              <AreaChart data={monthlyRevenue}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
+              <AreaChart data={Array.isArray(monthlyRevenue) ? monthlyRevenue : []}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
@@ -266,8 +266,8 @@ export function AdminDashboardCharts({
             </div>
           </div>
           <div className="h-64 w-full min-w-0">
-            {devicesByCategory.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+            {Array.isArray(devicesByCategory) && devicesByCategory.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
                 <PieChart>
                   <Pie
                     data={devicesByCategory}
