@@ -46,23 +46,23 @@ export function LightNavbar({
   const baseHref = userType === "admin" ? "/admin" : "/portal";
 
   return (
-    <header className="fixed top-0 left-0 lg:left-64 right-0 z-30 h-16 bg-[#fafafa] border-b border-gray-100">
-      <div className="h-full px-4 lg:px-6 flex items-center justify-between">
+    <header className="fixed top-0 left-0 lg:left-64 right-0 z-30 h-14 sm:h-16 bg-[#fafafa] border-b border-gray-100">
+      <div className="h-full px-3 sm:px-4 lg:px-6 flex items-center justify-between">
         {/* Left side - Welcome & Search */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
           {/* Spacer for mobile hamburger menu */}
-          <div className="w-10 lg:hidden" />
-          <div className="hidden md:block">
-            <h1 className="text-lg lg:text-xl font-semibold text-gray-900">
-              Welcome back, {user.name?.split(" ")[0] || "User"}!
+          <div className="w-8 sm:w-10 lg:hidden" />
+          <div className="hidden sm:block">
+            <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 truncate max-w-[200px] sm:max-w-none">
+              Welcome, {user.name?.split(" ")[0] || "User"}!
             </h1>
           </div>
         </div>
 
         {/* Right side - Search & Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Search - Hidden on small mobile, shown on larger screens */}
-          <div className="hidden sm:flex items-center gap-2 bg-white rounded-xl px-3 lg:px-4 py-2 lg:py-2.5 border border-gray-200 w-40 md:w-52 lg:w-64 shadow-sm">
+          <div className="hidden md:flex items-center gap-2 bg-white rounded-xl px-3 lg:px-4 py-2 lg:py-2.5 border border-gray-200 w-40 md:w-52 lg:w-64 shadow-sm">
             <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
             <input
               type="text"

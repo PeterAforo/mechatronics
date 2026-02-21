@@ -60,7 +60,7 @@ export default async function PortalLayout({
         />
         
         {/* Page Content */}
-        <main className="pt-16">
+        <main className="pt-14 sm:pt-16">
           {children}
         </main>
       </div>

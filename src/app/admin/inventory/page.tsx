@@ -104,60 +104,60 @@ export default async function InventoryPage() {
   const totalUnits = inventory.length;
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-6">
+    <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Inventory</h1>
-          <p className="text-gray-500 mt-1">Manage device units and stock</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Inventory</h1>
+          <p className="text-sm sm:text-base text-gray-500 mt-1">Manage device units and stock</p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/inventory/import">
-            <Button variant="outline">
-              <Upload className="h-4 w-4 mr-2" />
-              Bulk Import
+            <Button variant="outline" size="sm" className="sm:size-default">
+              <Upload className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Bulk Import</span>
             </Button>
           </Link>
           <Link href="/admin/inventory/new">
-            <Button className="bg-[#f74780] hover:bg-[#e03a6f] text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Device
+            <Button size="sm" className="sm:size-default bg-[#f74780] hover:bg-[#e03a6f] text-white">
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Device</span>
             </Button>
           </Link>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-purple-50 rounded-lg">
-              <Boxes className="h-5 w-5 text-purple-600" />
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-5">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-purple-50 rounded-lg">
+              <Boxes className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Total Units</p>
-              <p className="text-2xl font-bold text-gray-900">{totalUnits}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-green-50 rounded-lg">
-              <Package className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Available</p>
-              <p className="text-2xl font-bold text-gray-900">{totalAvailable}</p>
+            <div className="text-center sm:text-left">
+              <p className="text-xs sm:text-sm text-gray-500">Total</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{totalUnits}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-50 rounded-lg">
-              <ShoppingCart className="h-5 w-5 text-blue-600" />
+        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-5">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-green-50 rounded-lg">
+              <Package className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Deployed</p>
-              <p className="text-2xl font-bold text-gray-900">{totalDeployed}</p>
+            <div className="text-center sm:text-left">
+              <p className="text-xs sm:text-sm text-gray-500">Available</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{totalAvailable}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-5">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-blue-50 rounded-lg">
+              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+            </div>
+            <div className="text-center sm:text-left">
+              <p className="text-xs sm:text-sm text-gray-500">Deployed</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{totalDeployed}</p>
             </div>
           </div>
         </div>
@@ -165,17 +165,17 @@ export default async function InventoryPage() {
 
       {/* Device Type Inventory Cards */}
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Inventory by Device Type</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Inventory by Device Type</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {deviceTypeInventory.map((dt) => (
             <div
               key={dt.id}
-              className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow"
+              className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-gray-900">{dt.name}</h3>
-                  <p className="text-xs text-gray-500">{dt.typeCode} • {dt.products}</p>
+              <div className="flex items-start justify-between mb-2 sm:mb-3">
+                <div className="min-w-0 flex-1 mr-2">
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{dt.name}</h3>
+                  <p className="text-xs text-gray-500 truncate">{dt.typeCode} • {dt.products}</p>
                 </div>
                 {dt.lowStock && (
                   <div className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-full text-xs font-medium">

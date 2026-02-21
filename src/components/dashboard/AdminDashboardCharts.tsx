@@ -84,25 +84,25 @@ function AnimatedStatCard({ title, value, change, changeLabel, icon, color, dela
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
-      className={`bg-white rounded-2xl p-5 border ${colors.border} hover:shadow-lg transition-all duration-300`}
+      className={`bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border ${colors.border} hover:shadow-lg transition-all duration-300`}
     >
       <div className="flex items-start justify-between">
-        <div className={`p-3 rounded-xl ${colors.bg}`}>
+        <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl ${colors.bg}`}>
           <div className={colors.icon}>{icon}</div>
         </div>
         {change !== undefined && (
-          <div className={`flex items-center gap-1 text-sm font-medium ${change >= 0 ? "text-green-600" : "text-red-600"}`}>
-            {change >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+          <div className={`flex items-center gap-0.5 sm:gap-1 text-xs sm:text-sm font-medium ${change >= 0 ? "text-green-600" : "text-red-600"}`}>
+            {change >= 0 ? <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" /> : <ArrowDownRight className="h-3 w-3 sm:h-4 sm:w-4" />}
             {Math.abs(change)}%
           </div>
         )}
       </div>
-      <div className="mt-4">
-        <p className="text-sm text-gray-500 mb-1">{title}</p>
-        <p className="text-2xl font-bold text-gray-900">
+      <div className="mt-2 sm:mt-4">
+        <p className="text-xs sm:text-sm text-gray-500 mb-0.5 sm:mb-1 truncate">{title}</p>
+        <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
           {isNumeric ? (typeof value === "string" && value.includes("GHS") ? `GHS ${displayValue.toLocaleString()}` : displayValue.toLocaleString()) : value}
         </p>
-        {changeLabel && <p className="text-xs text-gray-400 mt-1">{changeLabel}</p>}
+        {changeLabel && <p className="text-xs text-gray-400 mt-0.5 sm:mt-1 hidden sm:block">{changeLabel}</p>}
       </div>
     </motion.div>
   );
@@ -146,9 +146,9 @@ export function AdminDashboardCharts({
   const safeDevicesByCategory = Array.isArray(devicesByCategory) ? [...devicesByCategory] : [];
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Stats Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
         <AnimatedStatCard
           title="Total Customers"
           value={stats.totalCustomers}
@@ -212,25 +212,25 @@ export function AdminDashboardCharts({
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Revenue Trend Chart */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="bg-white rounded-2xl border border-gray-100 p-5"
+          className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-3 sm:p-5"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div>
-              <h3 className="font-semibold text-gray-900">Revenue Trend</h3>
-              <p className="text-sm text-gray-500">Monthly revenue overview</p>
+              <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Revenue Trend</h3>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Monthly revenue overview</p>
             </div>
-            <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
-              <TrendingUp className="h-4 w-4" />
+            <div className="flex items-center gap-1 text-green-600 text-xs sm:text-sm font-medium">
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
               +{revenueGrowth}%
             </div>
           </div>
-          <div className="h-64 w-full min-w-0">
+          <div className="h-48 sm:h-64 w-full min-w-0">
             {mounted && safeMonthlyRevenue.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
               <AreaChart data={safeMonthlyRevenue}>
@@ -274,15 +274,15 @@ export function AdminDashboardCharts({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-white rounded-2xl border border-gray-100 p-5"
+          className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-3 sm:p-5"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div>
-              <h3 className="font-semibold text-gray-900">Devices by Category</h3>
-              <p className="text-sm text-gray-500">Distribution of deployed devices</p>
+              <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Devices by Category</h3>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Distribution of deployed devices</p>
             </div>
           </div>
-          <div className="h-64 w-full min-w-0">
+          <div className="h-48 sm:h-64 w-full min-w-0">
             {mounted && safeDevicesByCategory.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
                 <PieChart>

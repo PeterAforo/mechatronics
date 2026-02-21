@@ -176,7 +176,7 @@ export default async function AdminPortalPage() {
   const customerGrowth = 8;
 
   return (
-    <main className="p-4 md:p-6 space-y-6">
+    <main className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       {/* Stats Cards and Charts */}
       <AdminDashboardCharts
         stats={stats}
@@ -187,74 +187,74 @@ export default async function AdminPortalPage() {
       />
 
       {/* Orders and AI Advisor Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         {/* Left Column - Orders */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 space-y-4 sm:space-y-6">
           {/* Today's Orders */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-gray-100">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div>
-                <h3 className="font-semibold text-gray-900">Today&apos;s Orders</h3>
-                <p className="text-sm text-gray-500">{todaysOrders.length} order(s) today</p>
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Today&apos;s Orders</h3>
+                <p className="text-xs sm:text-sm text-gray-500">{todaysOrders.length} order(s) today</p>
               </div>
-              <Link href="/admin/orders" className="text-purple-600 text-sm font-medium hover:text-purple-700 flex items-center gap-1">
-                View all <ChevronRight className="h-4 w-4" />
+              <Link href="/admin/orders" className="text-purple-600 text-xs sm:text-sm font-medium hover:text-purple-700 flex items-center gap-1">
+                View all <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </Link>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {todaysOrders.length > 0 ? todaysOrders.map((order) => (
                 <Link 
                   key={order.id.toString()}
                   href={`/admin/orders/${order.id}`}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors gap-3"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors gap-2 sm:gap-3"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${
                       order.status === "paid" ? "bg-green-100" :
                       order.status === "pending" ? "bg-yellow-100" :
                       "bg-gray-100"
                     }`}>
-                      <ShoppingCart className={`h-5 w-5 ${
+                      <ShoppingCart className={`h-4 w-4 sm:h-5 sm:w-5 ${
                         order.status === "paid" ? "text-green-600" :
                         order.status === "pending" ? "text-yellow-600" :
                         "text-gray-600"
                       }`} />
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{order.orderRef}</p>
-                      <p className="text-xs text-gray-500">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{order.orderRef}</p>
+                      <p className="text-xs text-gray-500 truncate">
                         {order.items.map(i => i.product.name).join(", ")}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 sm:gap-4 ml-auto">
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">{order.currency} {Number(order.total).toFixed(0)}</p>
+                      <p className="font-semibold text-gray-900 text-sm sm:text-base">{order.currency} {Number(order.total).toFixed(0)}</p>
                     </div>
-                    <Badge variant="outline" className={
+                    <Badge variant="outline" className={`text-xs ${
                       order.status === "paid" ? "bg-green-50 text-green-700 border-green-200" :
                       order.status === "pending" ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
                       "bg-gray-50 text-gray-700 border-gray-200"
-                    }>
+                    }`}>
                       {order.status}
                     </Badge>
                   </div>
                 </Link>
               )) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Clock className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                  <p>No orders today yet</p>
+                <div className="text-center py-6 sm:py-8 text-gray-500">
+                  <Clock className="h-8 w-8 sm:h-10 sm:w-10 text-gray-300 mx-auto mb-2 sm:mb-3" />
+                  <p className="text-sm sm:text-base">No orders today yet</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Recent & Pending Orders Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Recent Orders */}
-            <div className="bg-white rounded-2xl p-5 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Recent Orders</h3>
+            <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-gray-100">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Recent Orders</h3>
                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                   Completed
                 </Badge>

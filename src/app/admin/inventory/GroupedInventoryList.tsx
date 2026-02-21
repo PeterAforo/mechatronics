@@ -84,8 +84,8 @@ export default function GroupedInventoryList({ groups }: GroupedInventoryListPro
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">All Inventory Items</h2>
+    <div className="space-y-3 sm:space-y-4">
+      <h2 className="text-base sm:text-lg font-semibold text-gray-900">All Inventory Items</h2>
       
       {groups.map((group) => {
         const isExpanded = expandedGroups.has(group.deviceTypeId);
@@ -110,9 +110,9 @@ export default function GroupedInventoryList({ groups }: GroupedInventoryListPro
             {/* Group Header */}
             <button
               onClick={() => toggleGroup(group.deviceTypeId)}
-              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 transition-colors"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <Checkbox
                   checked={allSelected}
                   ref={(el) => {
@@ -124,12 +124,12 @@ export default function GroupedInventoryList({ groups }: GroupedInventoryListPro
                   onClick={(e) => e.stopPropagation()}
                   aria-label={`Select all ${group.deviceTypeName}`}
                 />
-                <div className="p-2 bg-purple-50 rounded-lg">
-                  <Boxes className="h-5 w-5 text-purple-600" />
+                <div className="p-1.5 sm:p-2 bg-purple-50 rounded-lg">
+                  <Boxes className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                 </div>
                 <div className="text-left">
-                  <h3 className="font-semibold text-gray-900">{group.deviceTypeName}</h3>
-                  <p className="text-sm text-gray-500">{group.items.length} units</p>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{group.deviceTypeName}</h3>
+                  <p className="text-xs sm:text-sm text-gray-500">{group.items.length} units</p>
                 </div>
               </div>
               <ChevronDown
@@ -143,9 +143,9 @@ export default function GroupedInventoryList({ groups }: GroupedInventoryListPro
                 {group.items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-gray-50 transition-colors"
                   >
-                    <div className="pl-6">
+                    <div className="pl-2 sm:pl-6">
                       <Checkbox
                         checked={selectedItems.has(item.id)}
                         onCheckedChange={() => toggleItem(item.id)}
@@ -155,19 +155,19 @@ export default function GroupedInventoryList({ groups }: GroupedInventoryListPro
                     </div>
                     <Link
                       href={`/admin/inventory/${item.id}`}
-                      className="flex-1 flex items-center justify-between"
+                      className="flex-1 flex items-center justify-between min-w-0"
                     >
-                      <div>
-                        <p className="font-medium text-gray-900">{item.serialNumber}</p>
-                        <p className="text-sm text-gray-500">
-                          {item.imei || "No IMEI"} • {item.firmwareVersion || "Unknown firmware"}
+                      <div className="min-w-0 flex-1 mr-2">
+                        <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{item.serialNumber}</p>
+                        <p className="text-xs sm:text-sm text-gray-500 truncate">
+                          {item.imei || "No IMEI"} • {item.firmwareVersion || "v?"}
                         </p>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <Badge variant="outline" className={statusColors[item.status] || statusColors.in_stock}>
+                      <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                        <Badge variant="outline" className={`text-xs ${statusColors[item.status] || statusColors.in_stock}`}>
                           {item.status.replace("_", " ")}
                         </Badge>
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                        <ChevronRight className="h-4 w-4 text-gray-400 hidden sm:block" />
                       </div>
                     </Link>
                   </div>
