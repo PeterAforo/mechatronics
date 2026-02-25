@@ -363,29 +363,31 @@ model Tenant {
   billingEmail String?       @map("billing_email") @db.VarChar(200)
   logoUrl      String?       @map("logo_url") @db.VarChar(255)
   timezone     String?       @default("Africa/Accra") @db.VarChar(60)
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime?     @updatedAt @map("updated_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime?         @updatedAt @map("updated_at")
   sites        TenantSite[]
   users        TenantUser[]
+  pushTokens   DevicePushToken[]
 
   @@index([status])
   @@map("tenants")
 }
 
 model TenantUser {
-  id              BigInt           @id @default(autoincrement()) @map("user_id")
-  tenantId        BigInt           @map("tenant_id")
-  email           String           @unique @db.VarChar(200)
-  passwordHash    String           @map("password_hash") @db.VarChar(255)
-  name            String?          @db.VarChar(200)
-  phone           String?          @db.VarChar(50)
-  role            TenantUserRole   @default(user)
-  status          TenantUserStatus @default(pending)
-  emailVerifiedAt DateTime?        @map("email_verified_at")
-  lastLoginAt     DateTime?        @map("last_login_at")
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime?        @updatedAt @map("updated_at")
-  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id              BigInt            @id @default(autoincrement()) @map("user_id")
+  tenantId        BigInt            @map("tenant_id")
+  email           String            @unique @db.VarChar(200)
+  passwordHash    String            @map("password_hash") @db.VarChar(255)
+  name            String?           @db.VarChar(200)
+  phone           String?           @db.VarChar(50)
+  role            TenantUserRole    @default(user)
+  status          TenantUserStatus  @default(pending)
+  emailVerifiedAt DateTime?         @map("email_verified_at")
+  lastLoginAt     DateTime?         @map("last_login_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime?         @updatedAt @map("updated_at")
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pushTokens      DevicePushToken[]
 
   @@index([status])
   @@index([tenantId])
@@ -930,4 +932,41 @@ model SystemSetting {
 
   @@index([category])
   @@map("system_settings")
+}
+
+// ============== MOBILE APP SUPPORT ==============
+
+model RefreshToken {
+  id        BigInt    @id @default(autoincrement()) @map("token_id")
+  userId    BigInt    @map("user_id")
+  userType  UserType  @map("user_type")
+  token     String    @unique @db.VarChar(255)
+  deviceId  String?   @map("device_id") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  @@index([userId, userType])
+  @@index([expiresAt])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model DevicePushToken {
+  id        BigInt    @id @default(autoincrement()) @map("push_token_id")
+  userId    BigInt    @map("user_id")
+  tenantId  BigInt    @map("tenant_id")
+  token     String    @db.VarChar(255)
+  platform  String    @db.VarChar(10) // ios, android
+  deviceId  String?   @map("device_id") @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  user   TenantUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
+  @@index([tenantId])
+  @@index([token])
+  @@map("device_push_tokens")
 }
