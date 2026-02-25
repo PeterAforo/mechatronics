@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { sendEmail, emailTemplates } from "@/lib/email";
 import { generateOrderRef } from "@/lib/utils/generators";
+import { checkRateLimit, getClientIP, rateLimitHeaders, RATE_LIMITS } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters"),
@@ -26,6 +27,17 @@ function generateTenantCode(companyName: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientIP = getClientIP(request);
+    const rateLimitResult = checkRateLimit(`register:${clientIP}`, RATE_LIMITS.auth);
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Please try again later." },
+        { status: 429, headers: rateLimitHeaders(rateLimitResult) }
+      );
+    }
+
     const body = await request.json();
     
     // Validate input
