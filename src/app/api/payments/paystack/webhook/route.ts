@@ -67,12 +67,12 @@ export async function POST(request: Request) {
         await handleSubscriptionDisable(event.data);
         break;
       default:
-        console.log("Unhandled Paystack event:", event.event);
+        logger.debug("Unhandled Paystack event", { event: event.event });
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Paystack webhook error:", error);
+    logger.error("Paystack webhook error", {}, error instanceof Error ? error : undefined);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }
@@ -172,7 +172,7 @@ async function handleChargeSuccess(data: {
         }
       }
 
-      console.log(`Order ${order.orderRef} paid and processed`);
+      logger.info("Order paid and processed", { orderRef: order.orderRef });
 
       // Send order confirmation email
       const tenant = await prisma.tenant.findUnique({
@@ -236,13 +236,13 @@ async function handleSubscriptionCreate(data: {
   customer: { email: string };
   plan: { plan_code: string };
 }) {
-  console.log("Subscription created:", data.subscription_code);
+  logger.info("Paystack subscription created", { subscriptionCode: data.subscription_code });
 }
 
 async function handleSubscriptionDisable(data: {
   subscription_code: string;
 }) {
-  console.log("Subscription disabled:", data.subscription_code);
+  logger.info("Paystack subscription disabled", { subscriptionCode: data.subscription_code });
 }
 
 function getNextBillingDate(interval: string): Date {

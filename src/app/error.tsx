@@ -15,9 +15,11 @@ export default function Error({
   useEffect(() => {
     console.error("Application error:", error);
     
-    // In production, send to error tracking service
+    // Send to Sentry in production
     if (process.env.NODE_ENV === "production") {
-      // TODO: Sentry.captureException(error);
+      import("@sentry/nextjs").then((Sentry) => {
+        Sentry.captureException(error);
+      });
     }
   }, [error]);
 

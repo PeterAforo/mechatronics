@@ -82,13 +82,13 @@ async function handleSuccessfulCharge(data: {
   });
 
   if (!transaction) {
-    console.log("Transaction not found for tx_ref:", tx_ref);
+    logger.warn("Transaction not found for tx_ref", { txRef: tx_ref });
     return;
   }
 
   // Check if already processed
   if (transaction.status === "success") {
-    console.log("Transaction already processed:", tx_ref);
+    logger.debug("Transaction already processed", { txRef: tx_ref });
     return;
   }
 
@@ -190,10 +190,10 @@ async function handleSuccessfulCharge(data: {
       subject: template.subject,
       html: template.html,
       text: template.text,
-    }).catch(console.error);
+    }).catch((err) => logger.error("Failed to send order confirmation email", {}, err));
   }
 
-  console.log(`Order ${order.orderRef} paid via Flutterwave webhook`);
+  logger.info("Order paid via Flutterwave webhook", { orderRef: order.orderRef });
 }
 
 function getNextBillingDate(interval: string): Date {
