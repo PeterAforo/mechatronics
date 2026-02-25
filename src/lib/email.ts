@@ -288,4 +288,56 @@ export const emailTemplates = {
     `,
     text: `You're Subscribed!\n\nThank you for subscribing to the Mechatronics newsletter!\n\nYou'll now receive updates on:\n- New product launches\n- IoT monitoring tips and best practices\n- Exclusive offers and promotions\n- Industry news and insights\n\nUnsubscribe: ${unsubscribeUrl}\n\n© 2026 Mechatronics`,
   }),
+
+  teamInvitation: (companyName: string, inviterName: string, inviteUrl: string) => ({
+    subject: `You've been invited to join ${companyName} on Mechatronics`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 40px 20px;">
+        <div style="max-width: 560px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <div style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); padding: 32px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">Team Invitation</h1>
+          </div>
+          <div style="padding: 32px;">
+            <h2 style="color: #1f2937; margin: 0 0 16px;">You're Invited! 🎉</h2>
+            <p style="color: #6b7280; line-height: 1.6; margin: 0 0 24px;">
+              <strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> on Mechatronics, our IoT monitoring platform.
+            </p>
+            
+            <p style="color: #6b7280; line-height: 1.6; margin: 0 0 24px;">
+              As a team member, you'll be able to:
+            </p>
+            <ul style="color: #6b7280; line-height: 1.8; padding-left: 20px; margin: 0 0 24px;">
+              <li>Monitor devices and view real-time data</li>
+              <li>Receive alerts and notifications</li>
+              <li>Access reports and analytics</li>
+            </ul>
+            
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600;">
+                Accept Invitation
+              </a>
+            </div>
+            
+            <p style="color: #9ca3af; font-size: 14px; line-height: 1.6;">
+              This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
+            </p>
+          </div>
+          <div style="background: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+              © 2026 Mechatronics. All rights reserved.<br>
+              Accra, Ghana
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `You're Invited!\n\n${inviterName} has invited you to join ${companyName} on Mechatronics.\n\nAs a team member, you'll be able to:\n- Monitor devices and view real-time data\n- Receive alerts and notifications\n- Access reports and analytics\n\nAccept your invitation: ${inviteUrl}\n\nThis invitation will expire in 7 days.\n\n© 2026 Mechatronics`,
+  }),
 };

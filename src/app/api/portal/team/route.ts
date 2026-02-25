@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import crypto from "crypto";
+import { sendEmail, emailTemplates } from "@/lib/email";
 
 // GET /api/portal/team - Get all team members
 export async function GET() {
@@ -110,9 +111,28 @@ export async function POST(request: Request) {
       },
     });
 
-    // TODO: Send invitation email
-    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${token}`;
-    console.log(`Invitation URL for ${email}: ${inviteUrl}`);
+    // Send invitation email
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://mechatronics.com.gh";
+    const inviteUrl = `${baseUrl}/invite/${token}`;
+    
+    // Get tenant info for the email
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { companyName: true },
+    });
+
+    const template = emailTemplates.teamInvitation(
+      tenant?.companyName || "Your Team",
+      session.user.name || "A team member",
+      inviteUrl
+    );
+
+    sendEmail({
+      to: email,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    }).catch((err) => console.error("Failed to send invitation email:", err));
 
     return NextResponse.json({
       id: invitation.id.toString(),

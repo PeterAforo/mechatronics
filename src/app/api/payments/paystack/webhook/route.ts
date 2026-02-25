@@ -2,27 +2,60 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import paystack from "@/lib/paystack";
 import { sendEmail, emailTemplates } from "@/lib/email";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
     const body = await request.text();
     const signature = request.headers.get("x-paystack-signature");
 
+    // Step 1: Verify signature exists
     if (!signature) {
+      logger.warn("Paystack webhook: Missing signature header");
       return NextResponse.json({ error: "No signature" }, { status: 400 });
     }
 
-    // Verify webhook signature
+    // Step 2: Verify webhook signature using HMAC
     if (!paystack.verifyWebhookSignature(body, signature)) {
+      logger.warn("Paystack webhook: Invalid signature", { signature: signature.substring(0, 10) });
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     const event = JSON.parse(body);
-    console.log("Paystack webhook event:", event.event);
+    logger.info("Paystack webhook received", { event: event.event, reference: event.data?.reference });
 
     switch (event.event) {
       case "charge.success":
-        await handleChargeSuccess(event.data);
+        // Step 3: Verify transaction with Paystack API (double verification)
+        try {
+          const verification = await paystack.verifyTransaction(event.data.reference);
+          
+          if (verification.data.status !== "success") {
+            logger.warn("Paystack webhook: Transaction not successful on verification", {
+              reference: event.data.reference,
+              status: verification.data.status,
+            });
+            return NextResponse.json({ error: "Transaction verification failed" }, { status: 400 });
+          }
+
+          // Step 4: Verify amount matches (prevent amount manipulation)
+          // Paystack amounts are in kobo (smallest currency unit)
+          if (verification.data.amount !== event.data.amount) {
+            logger.error("Paystack webhook: Amount mismatch", {
+              reference: event.data.reference,
+              webhookAmount: event.data.amount,
+              verifiedAmount: verification.data.amount,
+            });
+            return NextResponse.json({ error: "Amount verification failed" }, { status: 400 });
+          }
+
+          await handleChargeSuccess(event.data);
+        } catch (verifyError) {
+          logger.error("Paystack webhook: Verification API call failed", {
+            reference: event.data.reference,
+          }, verifyError instanceof Error ? verifyError : undefined);
+          return NextResponse.json({ error: "Verification failed" }, { status: 500 });
+        }
         break;
       case "charge.failed":
         await handleChargeFailed(event.data);

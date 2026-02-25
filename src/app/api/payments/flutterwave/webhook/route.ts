@@ -2,26 +2,63 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import flutterwave from "@/lib/flutterwave";
 import { sendEmail, emailTemplates } from "@/lib/email";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
     const signature = request.headers.get("verif-hash");
 
-    // Verify webhook signature
+    // Step 1: Verify webhook signature
     if (!signature || !flutterwave.verifyWebhookSignature(signature)) {
+      logger.warn("Flutterwave webhook: Invalid signature", { signature: signature?.substring(0, 10) });
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     const body = await request.json();
-    console.log("Flutterwave webhook event:", body.event);
+    logger.info("Flutterwave webhook received", { event: body.event, txRef: body.data?.tx_ref });
 
     if (body.event === "charge.completed" && body.data.status === "successful") {
-      await handleSuccessfulCharge(body.data);
+      // Step 2: Verify transaction with Flutterwave API (double verification)
+      const transactionId = body.data.id;
+      if (!transactionId) {
+        logger.warn("Flutterwave webhook: Missing transaction ID");
+        return NextResponse.json({ error: "Missing transaction ID" }, { status: 400 });
+      }
+
+      try {
+        const verification = await flutterwave.verifyTransaction(String(transactionId));
+        
+        // Step 3: Verify amounts match
+        if (verification.data.status !== "successful") {
+          logger.warn("Flutterwave webhook: Transaction not successful on verification", {
+            txRef: body.data.tx_ref,
+            status: verification.data.status,
+          });
+          return NextResponse.json({ error: "Transaction verification failed" }, { status: 400 });
+        }
+
+        // Step 4: Verify amount matches (prevent amount manipulation)
+        if (verification.data.amount !== body.data.amount) {
+          logger.error("Flutterwave webhook: Amount mismatch", {
+            txRef: body.data.tx_ref,
+            webhookAmount: body.data.amount,
+            verifiedAmount: verification.data.amount,
+          });
+          return NextResponse.json({ error: "Amount verification failed" }, { status: 400 });
+        }
+
+        await handleSuccessfulCharge(body.data);
+      } catch (verifyError) {
+        logger.error("Flutterwave webhook: Verification API call failed", {
+          txRef: body.data.tx_ref,
+        }, verifyError instanceof Error ? verifyError : undefined);
+        return NextResponse.json({ error: "Verification failed" }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Flutterwave webhook error:", error);
+    logger.error("Flutterwave webhook error", {}, error instanceof Error ? error : undefined);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }
