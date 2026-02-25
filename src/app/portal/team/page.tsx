@@ -219,51 +219,53 @@ export default function TeamPage() {
         </div>
         <div className="divide-y divide-gray-200">
           {users.map((user) => (
-            <div key={user.id} className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  <span className="text-gray-600 font-medium">
-                    {(user.name || user.email).charAt(0).toUpperCase()}
-                  </span>
+            <div key={user.id} className="p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-gray-600 font-medium">
+                      {(user.name || user.email).charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-900 truncate">{user.name || user.email}</p>
+                    <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900">{user.name || user.email}</p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 ml-14 sm:ml-0">
+                  <Badge variant="outline" className={getRoleBadgeColor(user.role)}>
+                    <Shield className="h-3 w-3 mr-1" />
+                    {user.role}
+                  </Badge>
+                  <Badge variant="outline" className={getStatusBadgeColor(user.status)}>
+                    {user.status}
+                  </Badge>
+                  {user.role !== "owner" && (
+                    <Select
+                      value={user.role}
+                      onValueChange={(role) => handleRoleChange(user.id, role)}
+                    >
+                      <SelectTrigger className="w-28 sm:w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="viewer">Viewer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {user.role !== "owner" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleRemove(user.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className={getRoleBadgeColor(user.role)}>
-                  <Shield className="h-3 w-3 mr-1" />
-                  {user.role}
-                </Badge>
-                <Badge variant="outline" className={getStatusBadgeColor(user.status)}>
-                  {user.status}
-                </Badge>
-                {user.role !== "owner" && (
-                  <Select
-                    value={user.role}
-                    onValueChange={(role) => handleRoleChange(user.id, role)}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-                {user.role !== "owner" && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleRemove(user.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
               </div>
             </div>
           ))}

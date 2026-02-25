@@ -37,16 +37,16 @@ export default async function AlertsPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Alerts</h1>
-          <p className="text-gray-500">Monitor and manage device alerts</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Alerts</h1>
+          <p className="text-sm sm:text-base text-gray-500">Monitor and manage device alerts</p>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-50 rounded-lg">
@@ -95,9 +95,9 @@ export default async function AlertsPage() {
               const Icon = severityIcons[alert.severity] || Info;
               return (
                 <div key={alert.id.toString()} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg ${
+                      <div className={`p-2 rounded-lg flex-shrink-0 ${
                         alert.severity === "critical" ? "bg-red-50" :
                         alert.severity === "warning" ? "bg-yellow-50" :
                         "bg-blue-50"
@@ -108,30 +108,30 @@ export default async function AlertsPage() {
                           "text-blue-600"
                         }`} />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium text-gray-900">{alert.title}</p>
-                        <p className="text-sm text-gray-500 mt-1">{alert.message}</p>
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{alert.message}</p>
                         <p className="text-xs text-gray-400 mt-2">
                           {new Date(alert.createdAt).toLocaleString()}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={severityColors[alert.severity]}>
+                    <div className="flex flex-wrap items-center gap-2 ml-11 sm:ml-0">
+                      <Badge variant="outline" className={`text-xs ${severityColors[alert.severity]}`}>
                         {alert.severity}
                       </Badge>
                       <Badge 
                         variant="outline"
-                        className={
+                        className={`text-xs ${
                           alert.status === "open" ? "border-red-200 bg-red-50 text-red-700" :
                           alert.status === "acknowledged" ? "border-yellow-200 bg-yellow-50 text-yellow-700" :
                           "border-green-200 bg-green-50 text-green-700"
-                        }
+                        }`}
                       >
                         {alert.status}
                       </Badge>
                       {alert.status === "open" && (
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="text-xs">
                           Acknowledge
                         </Button>
                       )}

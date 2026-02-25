@@ -151,20 +151,20 @@ export default async function AdminDevicesPage() {
 
       {/* Devices List */}
       <div className="bg-white rounded-xl border border-gray-100">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="font-semibold text-gray-900">All Devices</h2>
           <div className="flex items-center gap-2">
-            <div className="relative">
+            <div className="relative flex-1 sm:flex-none">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search devices..."
-                className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Search..."
+                className="w-full sm:w-auto pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2 flex-shrink-0">
               <Filter className="h-4 w-4" />
-              Filter
+              <span className="hidden sm:inline">Filter</span>
             </Button>
           </div>
         </div>
@@ -200,9 +200,9 @@ export default async function AdminDevicesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2 sm:gap-6">
                   {/* Health Score */}
-                  <div className="text-center">
+                  <div className="text-center hidden sm:block">
                     <div className={`text-lg font-bold ${
                       device.healthScore >= 80 ? "text-green-600" :
                       device.healthScore >= 50 ? "text-yellow-600" : "text-red-600"
@@ -213,7 +213,7 @@ export default async function AdminDevicesPage() {
                   </div>
 
                   {/* Last Seen */}
-                  <div className="text-right hidden sm:block">
+                  <div className="text-right hidden md:block">
                     <p className="text-sm text-gray-900">
                       {device.lastSeenAt 
                         ? device.hoursSinceLastSeen !== null && device.hoursSinceLastSeen < 1
@@ -228,16 +228,16 @@ export default async function AdminDevicesPage() {
                   </div>
 
                   {/* Connectivity Status Badge */}
-                  <Badge variant="outline" className={
+                  <Badge variant="outline" className={`text-xs sm:text-sm ${
                     device.connectivityStatus === "online" ? "bg-green-50 text-green-700 border-green-200" :
                     device.connectivityStatus === "offline" ? "bg-red-50 text-red-700 border-red-200" :
                     "bg-yellow-50 text-yellow-700 border-yellow-200"
-                  }>
+                  }`}>
                     {device.connectivityStatus === "online" ? "Online" :
                      device.connectivityStatus === "offline" ? "Offline" : "No Data"}
                   </Badge>
 
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                  <ChevronRight className="h-5 w-5 text-gray-400 hidden sm:block" />
                 </div>
               </div>
             </Link>
