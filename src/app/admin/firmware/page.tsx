@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Loader2, Plus, Upload, Package, CheckCircle, AlertTriangle, Send, Radio } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResponsiveTable } from "@/components/ui/responsive-table";
 
 interface DeviceType {
   id: string;
@@ -398,37 +399,39 @@ export default function FirmwarePage() {
               <p className="text-gray-500">Push firmware updates to devices from the Firmware Versions tab</p>
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenant</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Version</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {otaUpdates.map((ota) => (
-                    <tr key={ota.id}>
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium text-gray-900">{ota.deviceNickname || ota.deviceSerial}</p>
-                          <p className="text-xs text-gray-500">{ota.deviceType}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{ota.tenantName}</td>
-                      <td className="px-4 py-3 text-sm font-mono text-gray-600">v{ota.firmwareVersion}</td>
-                      <td className="px-4 py-3">{getStatusBadge(ota.status)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {format(new Date(ota.createdAt), "MMM d, HH:mm")}
-                      </td>
+            <ResponsiveTable>
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Device</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Tenant</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Version</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Created</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {otaUpdates.map((ota) => (
+                      <tr key={ota.id}>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div>
+                            <p className="font-medium text-gray-900">{ota.deviceNickname || ota.deviceSerial}</p>
+                            <p className="text-xs text-gray-500">{ota.deviceType}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{ota.tenantName}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-gray-600 whitespace-nowrap">v{ota.firmwareVersion}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">{getStatusBadge(ota.status)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                          {format(new Date(ota.createdAt), "MMM d, HH:mm")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </ResponsiveTable>
           )}
         </TabsContent>
       </Tabs>
