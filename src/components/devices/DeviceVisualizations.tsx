@@ -163,8 +163,14 @@ export function PowerMeterSVG({ value, min, max, unit = "kW", label = "Power Usa
   const glowRef = useRef<SVGCircleElement>(null);
   const valueRef = useRef<SVGTextElement>(null);
   
-  const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
-  const angle = -135 + (percentage / 100) * 270; // -135 to 135 degrees
+  // Calculate percentage based on actual min/max range
+  const range = max - min;
+  const percentage = range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 50;
+  
+  // Angle calculation: -135 degrees at 0%, +135 degrees at 100% (270 degree sweep)
+  const startAngle = -135;
+  const sweepAngle = 270;
+  const angle = startAngle + (percentage / 100) * sweepAngle;
   
   useEffect(() => {
     if (needleRef.current) {
@@ -199,6 +205,10 @@ export function PowerMeterSVG({ value, min, max, unit = "kW", label = "Power Usa
     if (percentage > 60) return "#f59e0b";
     return "#10b981";
   };
+
+  // Calculate arc length for the progress indicator
+  const arcLength = 220; // Approximate length of the arc path
+  const progressLength = (percentage / 100) * arcLength;
   
   return (
     <div className="flex flex-col items-center">
@@ -227,25 +237,39 @@ export function PowerMeterSVG({ value, min, max, unit = "kW", label = "Power Usa
           strokeLinecap="round"
         />
         
-        {/* Colored arc */}
+        {/* Colored arc - progress indicator */}
         <path
           d="M 30 130 A 70 70 0 1 1 170 130"
           fill="none"
           stroke="url(#meterGradient)"
           strokeWidth="8"
           strokeLinecap="round"
-          strokeDasharray={`${(percentage / 100) * 220} 220`}
+          strokeDasharray={`${progressLength} ${arcLength}`}
         />
         
-        {/* Tick marks */}
+        {/* Tick marks with labels */}
         {[0, 25, 50, 75, 100].map((tick) => {
-          const tickAngle = (-135 + (tick / 100) * 270) * (Math.PI / 180);
+          const tickAngle = (startAngle + (tick / 100) * sweepAngle) * (Math.PI / 180);
           const x1 = 100 + 55 * Math.cos(tickAngle);
           const y1 = 100 + 55 * Math.sin(tickAngle);
           const x2 = 100 + 65 * Math.cos(tickAngle);
           const y2 = 100 + 65 * Math.sin(tickAngle);
+          const labelX = 100 + 78 * Math.cos(tickAngle);
+          const labelY = 100 + 78 * Math.sin(tickAngle);
+          const tickValue = min + (tick / 100) * range;
           return (
-            <line key={tick} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#9ca3af" strokeWidth="2" />
+            <g key={tick}>
+              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#9ca3af" strokeWidth="2" />
+              <text 
+                x={labelX} 
+                y={labelY + 3} 
+                textAnchor="middle" 
+                fontSize="8" 
+                fill="#9ca3af"
+              >
+                {tickValue.toFixed(0)}
+              </text>
+            </g>
           );
         })}
         
@@ -258,16 +282,17 @@ export function PowerMeterSVG({ value, min, max, unit = "kW", label = "Power Usa
           fill={getColor()}
           opacity="0.3"
           filter="url(#glow)"
+          style={{ transformOrigin: "100px 100px" }}
         />
         
-        {/* Needle */}
-        <g ref={needleRef}>
+        {/* Needle - starts pointing up and rotates based on value */}
+        <g ref={needleRef} style={{ transformOrigin: "100px 100px" }}>
           <polygon 
-            points="100,100 95,105 100,40 105,105"
+            points="100,100 96,106 100,35 104,106"
             fill={getColor()}
           />
-          <circle cx="100" cy="100" r="8" fill={getColor()} />
-          <circle cx="100" cy="100" r="4" fill="white" />
+          <circle cx="100" cy="100" r="10" fill={getColor()} />
+          <circle cx="100" cy="100" r="5" fill="white" />
         </g>
         
         {/* Value display */}
@@ -276,9 +301,10 @@ export function PowerMeterSVG({ value, min, max, unit = "kW", label = "Power Usa
           x="100" 
           y="145"
           textAnchor="middle" 
-          fontSize="20" 
+          fontSize="18" 
           fontWeight="bold"
           fill={getColor()}
+          style={{ transformOrigin: "100px 145px" }}
         >
           {value.toFixed(1)} {unit}
         </text>
@@ -294,14 +320,24 @@ export function TemperatureGaugeSVG({ value, min, max, unit = "°C", label = "Te
   const bulbRef = useRef<SVGCircleElement>(null);
   const valueRef = useRef<SVGTextElement>(null);
   
-  const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
-  const mercuryHeight = (percentage / 100) * 100;
+  // Calculate percentage based on actual min/max range
+  const range = max - min;
+  const percentage = range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 50;
+  
+  // Mercury tube dimensions
+  const tubeTop = 22;
+  const tubeBottom = 138; // Extended to connect with bulb
+  const tubeHeight = tubeBottom - tubeTop;
+  const mercuryHeight = (percentage / 100) * tubeHeight;
+  const mercuryY = tubeBottom - mercuryHeight;
   
   useEffect(() => {
     if (mercuryRef.current) {
       gsap.to(mercuryRef.current, {
-        height: mercuryHeight,
-        y: 120 - mercuryHeight,
+        attr: { 
+          height: mercuryHeight,
+          y: mercuryY
+        },
         duration: 1,
         ease: "power2.out",
       });
@@ -309,7 +345,7 @@ export function TemperatureGaugeSVG({ value, min, max, unit = "°C", label = "Te
     
     if (bulbRef.current) {
       gsap.to(bulbRef.current, {
-        scale: 1 + (percentage / 500),
+        scale: 1 + (percentage / 400),
         duration: 1,
         ease: "power2.out",
       });
@@ -321,19 +357,29 @@ export function TemperatureGaugeSVG({ value, min, max, unit = "°C", label = "Te
         { opacity: 1, duration: 0.5 }
       );
     }
-  }, [mercuryHeight, percentage]);
+  }, [mercuryHeight, mercuryY, percentage]);
   
   const getColor = () => {
     if (isWarning) return "#ef4444";
-    if (value > 35) return "#ef4444";
-    if (value > 25) return "#f59e0b";
-    if (value < 5) return "#3b82f6";
+    // Color based on percentage of range, not absolute value
+    if (percentage > 80) return "#ef4444";
+    if (percentage > 60) return "#f59e0b";
+    if (percentage < 20) return "#3b82f6";
     return "#10b981";
   };
+
+  // Generate scale markers based on actual min/max
+  const scaleMarkers = [
+    { value: max, y: tubeTop },
+    { value: min + (range * 0.75), y: tubeTop + tubeHeight * 0.25 },
+    { value: min + (range * 0.5), y: tubeTop + tubeHeight * 0.5 },
+    { value: min + (range * 0.25), y: tubeTop + tubeHeight * 0.75 },
+    { value: min, y: tubeBottom },
+  ];
   
   return (
     <div className="flex flex-col items-center">
-      <svg width="100" height="200" viewBox="0 0 100 200">
+      <svg width="120" height="200" viewBox="0 0 120 200">
         <defs>
           <linearGradient id="tempGradient" x1="0%" y1="100%" x2="0%" y2="0%">
             <stop offset="0%" stopColor="#3b82f6" />
@@ -341,20 +387,25 @@ export function TemperatureGaugeSVG({ value, min, max, unit = "°C", label = "Te
             <stop offset="75%" stopColor="#f59e0b" />
             <stop offset="100%" stopColor="#ef4444" />
           </linearGradient>
+          <clipPath id="tubeClip">
+            <rect x="47" y={tubeTop} width="16" height={tubeHeight} rx="8" />
+          </clipPath>
         </defs>
         
         {/* Thermometer body */}
-        <rect x="40" y="20" width="20" height="120" rx="10" fill="#f3f4f6" stroke="#d1d5db" strokeWidth="2" />
+        <rect x="45" y="20" width="20" height="120" rx="10" fill="#f3f4f6" stroke="#d1d5db" strokeWidth="2" />
         
-        {/* Mercury tube */}
-        <clipPath id="tubeClip">
-          <rect x="42" y="22" width="16" height="116" rx="8" />
-        </clipPath>
+        {/* Mercury tube background */}
+        <g clipPath="url(#tubeClip)">
+          <rect x="47" y={tubeTop} width="16" height={tubeHeight} fill="#e5e7eb" />
+        </g>
+        
+        {/* Mercury fill - animated */}
         <g clipPath="url(#tubeClip)">
           <rect 
             ref={mercuryRef}
-            x="42" 
-            y="120" 
+            x="47" 
+            y={tubeBottom}
             width="16" 
             height="0"
             fill={getColor()}
@@ -364,31 +415,44 @@ export function TemperatureGaugeSVG({ value, min, max, unit = "°C", label = "Te
         {/* Bulb */}
         <circle 
           ref={bulbRef}
-          cx="50" 
+          cx="55" 
           cy="155" 
           r="20"
           fill={getColor()}
-          style={{ transformOrigin: "50px 155px" }}
+          style={{ transformOrigin: "55px 155px" }}
         />
-        <circle cx="50" cy="155" r="12" fill="white" opacity="0.3" />
+        <circle cx="55" cy="155" r="10" fill="white" opacity="0.3" />
         
-        {/* Scale markers */}
-        {[min, (min + max) / 2, max].map((temp, i) => (
+        {/* Scale markers with actual values */}
+        {scaleMarkers.map((marker, i) => (
           <g key={i}>
-            <line x1="62" y1={120 - (i * 50)} x2="70" y2={120 - (i * 50)} stroke="#9ca3af" strokeWidth="1" />
-            <text x="74" y={124 - (i * 50)} fontSize="10" fill="#9ca3af">{temp}°</text>
+            <line x1="67" y1={marker.y} x2="75" y2={marker.y} stroke="#9ca3af" strokeWidth="1" />
+            <text x="78" y={marker.y + 4} fontSize="9" fill="#6b7280">
+              {marker.value.toFixed(0)}°
+            </text>
           </g>
         ))}
+        
+        {/* Current value indicator line */}
+        <line 
+          x1="35" 
+          y1={mercuryY} 
+          x2="45" 
+          y2={mercuryY} 
+          stroke={getColor()} 
+          strokeWidth="2"
+        />
         
         {/* Value display */}
         <text 
           ref={valueRef}
-          x="50" 
+          x="55" 
           y="190"
           textAnchor="middle" 
-          fontSize="18" 
+          fontSize="16" 
           fontWeight="bold"
           fill={getColor()}
+          style={{ transformOrigin: "55px 190px" }}
         >
           {value.toFixed(1)}{unit}
         </text>
@@ -645,7 +709,7 @@ export function DeviceHealthSVG({
   category: string;
 }) {
   const pulseRef = useRef<SVGCircleElement>(null);
-  const scoreRef = useRef<SVGTextElement>(null);
+  const scoreRef = useRef<HTMLSpanElement>(null);
   
   useEffect(() => {
     if (pulseRef.current && isOnline) {
@@ -660,11 +724,11 @@ export function DeviceHealthSVG({
     
     if (scoreRef.current) {
       gsap.fromTo(scoreRef.current,
-        { scale: 0 },
-        { scale: 1, duration: 0.8, ease: "elastic.out(1, 0.5)" }
+        { scale: 0, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.8, ease: "elastic.out(1, 0.5)" }
       );
     }
-  }, [isOnline]);
+  }, [isOnline, healthScore]);
   
   const getHealthColor = () => {
     if (healthScore >= 80) return "#10b981";
@@ -675,71 +739,70 @@ export function DeviceHealthSVG({
   const getCategoryIcon = () => {
     switch (category) {
       case "water":
-        return "M50,20 Q30,50 30,70 Q30,90 50,90 Q70,90 70,70 Q70,50 50,20";
+        return "M50,25 Q35,45 35,60 Q35,75 50,75 Q65,75 65,60 Q65,45 50,25";
       case "power":
-        return "M55,15 L40,45 L50,45 L45,75 L65,40 L55,40 Z";
+        return "M55,22 L42,48 L50,48 L45,68 L62,42 L54,42 Z";
       case "environment":
-        return "M50,20 L50,50 M50,50 L35,65 M50,50 L65,65 M30,75 L70,75";
+        return "M50,25 L50,50 M50,50 L38,62 M50,50 L62,62 M35,70 L65,70";
       default:
-        return "M50,25 A25,25 0 1,1 50,75 A25,25 0 1,1 50,25";
+        return "M50,30 A20,20 0 1,1 50,70 A20,20 0 1,1 50,30";
     }
   };
   
   return (
-    <svg width="120" height="120" viewBox="0 0 100 100">
-      <defs>
-        <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={getHealthColor()} stopOpacity="0.8" />
-          <stop offset="100%" stopColor={getHealthColor()} stopOpacity="0.4" />
-        </linearGradient>
-      </defs>
-      
-      {/* Outer ring */}
-      <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" strokeWidth="4" />
-      <circle 
-        cx="50" 
-        cy="50" 
-        r="45" 
-        fill="none" 
-        stroke={getHealthColor()}
-        strokeWidth="4"
-        strokeDasharray={`${(healthScore / 100) * 283} 283`}
-        strokeLinecap="round"
-        transform="rotate(-90 50 50)"
-      />
-      
-      {/* Pulse effect for online status */}
-      {isOnline && (
+    <div className="flex flex-col items-center">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={getHealthColor()} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={getHealthColor()} stopOpacity="0.5" />
+          </linearGradient>
+        </defs>
+        
+        {/* Outer ring background */}
+        <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" strokeWidth="6" />
+        
+        {/* Progress ring */}
         <circle 
-          ref={pulseRef}
           cx="50" 
           cy="50" 
-          r="35"
-          fill="none"
+          r="45" 
+          fill="none" 
           stroke={getHealthColor()}
-          strokeWidth="2"
-          opacity="0.5"
-          style={{ transformOrigin: "50px 50px" }}
+          strokeWidth="6"
+          strokeDasharray={`${(healthScore / 100) * 283} 283`}
+          strokeLinecap="round"
+          transform="rotate(-90 50 50)"
         />
-      )}
+        
+        {/* Pulse effect for online status */}
+        {isOnline && (
+          <circle 
+            ref={pulseRef}
+            cx="50" 
+            cy="50" 
+            r="32"
+            fill="none"
+            stroke={getHealthColor()}
+            strokeWidth="2"
+            opacity="0.5"
+            style={{ transformOrigin: "50px 50px" }}
+          />
+        )}
+        
+        {/* Center icon */}
+        <circle cx="50" cy="50" r="28" fill="url(#healthGradient)" />
+        <path d={getCategoryIcon()} fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
       
-      {/* Center icon */}
-      <circle cx="50" cy="50" r="30" fill="url(#healthGradient)" />
-      <path d={getCategoryIcon()} fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      
-      {/* Health score */}
-      <text 
+      {/* Health score displayed below the icon */}
+      <span 
         ref={scoreRef}
-        x="50" 
-        y="92"
-        textAnchor="middle" 
-        fontSize="12" 
-        fontWeight="bold"
-        fill={getHealthColor()}
-        style={{ transformOrigin: "50px 92px" }}
+        className="text-lg font-bold mt-1"
+        style={{ color: getHealthColor() }}
       >
         {healthScore}%
-      </text>
-    </svg>
+      </span>
+    </div>
   );
 }

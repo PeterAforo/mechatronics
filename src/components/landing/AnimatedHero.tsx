@@ -332,7 +332,7 @@ export default function AnimatedHero() {
               </div>
 
               {/* Floating notification cards */}
-              <div className="absolute -top-4 -right-4 bg-white rounded-xl p-4 shadow-xl animate-bounce-slow">
+              <div className="absolute -top-4 -right-4 bg-white rounded-xl p-4 shadow-xl animate-[bounce-slow_3s_ease-in-out_infinite]">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 rounded-lg">
                     <Check className="h-4 w-4 text-green-600" />
@@ -372,16 +372,6 @@ export default function AnimatedHero() {
           ))}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-        .animate-bounce-slow {
-          animation: bounce-slow 3s ease-in-out infinite;
-        }
-      `}</style>
     </section>
   );
 }

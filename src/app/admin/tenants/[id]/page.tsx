@@ -2,7 +2,8 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Building2, Mail, Phone, MapPin, Calendar, Users, Cpu, Link2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Building2, Mail, Phone, MapPin, Calendar, Users, Cpu, Link2, Eye } from "lucide-react";
 import { CopyButton } from "@/components/ui/copy-button";
 import AssignDeviceDialog from "./AssignDeviceDialog";
 import TenantActions from "./TenantActions";
@@ -191,9 +192,17 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
                             </Badge>
                           )}
                         </div>
-                        <Badge variant="outline" className={device.status === "active" ? "border-green-200 bg-green-50 text-green-700" : "border-gray-200"}>
-                          {device.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/admin/tenants/${id}/devices/${device.id}`}>
+                            <Button variant="outline" size="sm" className="gap-1.5 text-purple-600 hover:text-purple-700 hover:bg-purple-50">
+                              <Eye className="h-3.5 w-3.5" />
+                              View Dashboard
+                            </Button>
+                          </Link>
+                          <Badge variant="outline" className={device.status === "active" ? "border-green-200 bg-green-50 text-green-700" : "border-gray-200"}>
+                            {device.status}
+                          </Badge>
+                        </div>
                       </div>
                       
                       {/* Device Serial */}

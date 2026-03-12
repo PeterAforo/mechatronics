@@ -3,10 +3,10 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings, History } from "lucide-react";
-import DeviceDashboard from "./DeviceDashboard";
+import { ArrowLeft, Settings } from "lucide-react";
+import DeviceHistory from "./DeviceHistory";
 
-export default async function DeviceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function DeviceHistoryPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   
   if (!session?.user) {
@@ -30,6 +30,13 @@ export default async function DeviceDetailPage({ params }: { params: Promise<{ i
       id: BigInt(id),
       tenantId,
     },
+    include: {
+      inventory: {
+        include: {
+          deviceType: true,
+        },
+      },
+    },
   });
 
   if (!device) {
@@ -42,30 +49,25 @@ export default async function DeviceDetailPage({ params }: { params: Promise<{ i
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Link 
-            href="/portal" 
+            href={`/portal/devices/${id}`} 
             className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="text-sm">Back to Dashboard</span>
           </Link>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href={`/portal/devices/${id}/history`}>
-            <Button variant="outline" size="sm" className="gap-2">
-              <History className="h-4 w-4" />
-              History
-            </Button>
-          </Link>
-          <Link href={`/portal/devices/${id}/settings`}>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </Button>
-          </Link>
-        </div>
+        <Link href={`/portal/devices/${id}/settings`}>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Settings className="h-4 w-4" />
+            Settings
+          </Button>
+        </Link>
       </div>
 
-      <DeviceDashboard deviceId={id} />
+      <DeviceHistory 
+        deviceId={id} 
+        deviceName={device.nickname || device.inventory?.deviceType?.name || "Device"}
+      />
     </div>
   );
 }

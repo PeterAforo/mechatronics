@@ -204,3 +204,9 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Custom keyframe animations */
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}

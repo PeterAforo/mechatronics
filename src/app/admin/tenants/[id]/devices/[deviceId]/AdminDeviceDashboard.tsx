@@ -4,19 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { 
   Droplets, Zap, Thermometer, Factory, Gauge, TrendingUp, TrendingDown,
   Wifi, WifiOff, RefreshCw, Sparkles, AlertTriangle, CheckCircle2, Info,
-  ArrowUp, ArrowDown, Minus, Activity, Calendar, Clock
+  ArrowUp, ArrowDown, Minus, Activity, Building2
 } from "lucide-react";
 import {
   XAxis,
@@ -49,6 +40,10 @@ interface Variable {
 }
 
 interface TelemetryData {
+  tenant: {
+    id: string;
+    companyName: string;
+  };
   device: {
     id: string;
     nickname: string | null;
@@ -104,245 +99,104 @@ function generateAIRecommendations(
     if (!reading || !stats) continue;
     
     const value = reading.value;
-    const { min, max, avg } = stats;
     
-    // Check if value is within normal range
     if (variable.minValue !== null && value < variable.minValue) {
       recommendations.push({
         type: "warning",
         title: `Low ${variable.label}`,
-        message: `Current ${variable.label.toLowerCase()} (${value}${variable.unit || ""}) is below the minimum threshold of ${variable.minValue}${variable.unit || ""}. Consider taking corrective action.`,
+        message: `Current ${variable.label.toLowerCase()} (${value}${variable.unit || ""}) is below the minimum threshold of ${variable.minValue}${variable.unit || ""}.`,
         icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
       });
     } else if (variable.maxValue !== null && value > variable.maxValue) {
       recommendations.push({
         type: "warning",
         title: `High ${variable.label}`,
-        message: `Current ${variable.label.toLowerCase()} (${value}${variable.unit || ""}) exceeds the maximum threshold of ${variable.maxValue}${variable.unit || ""}. Immediate attention may be required.`,
+        message: `Current ${variable.label.toLowerCase()} (${value}${variable.unit || ""}) exceeds the maximum threshold of ${variable.maxValue}${variable.unit || ""}.`,
         icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
       });
-    } else if (value >= avg * 0.9 && value <= avg * 1.1) {
+    } else {
       recommendations.push({
         type: "success",
-        title: `${variable.label} Stable`,
-        message: `${variable.label} readings are consistent and within normal operating range. Current: ${value}${variable.unit || ""}, Average: ${avg.toFixed(1)}${variable.unit || ""}.`,
+        title: `${variable.label} Normal`,
+        message: `${variable.label} readings are within normal operating range. Current: ${value}${variable.unit || ""}.`,
         icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
       });
     }
-    
-    // Trend analysis
-    const chartData = data.chartData[variable.code];
-    if (chartData && chartData.length >= 5) {
-      const recent = chartData.slice(-5);
-      const trend = recent[recent.length - 1].value - recent[0].value;
-      const trendPercent = ((trend / recent[0].value) * 100).toFixed(1);
-      
-      if (Math.abs(Number(trendPercent)) > 10) {
-        recommendations.push({
-          type: "info",
-          title: `${variable.label} Trend`,
-          message: `${variable.label} has ${trend > 0 ? "increased" : "decreased"} by ${Math.abs(Number(trendPercent))}% in recent readings. ${trend > 0 ? "Monitor for potential issues." : "This may indicate improving conditions."}`,
-          icon: <Info className="h-5 w-5 text-blue-500" />,
-        });
-      }
-    }
   }
   
-  // Add general recommendations if no specific ones
   if (recommendations.length === 0) {
     recommendations.push({
-      type: "success",
-      title: "All Systems Normal",
-      message: "All monitored parameters are within expected ranges. Your device is operating optimally.",
-      icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+      type: "info",
+      title: "No Data",
+      message: "No telemetry data available for analysis.",
+      icon: <Info className="h-5 w-5 text-blue-500" />,
     });
   }
   
-  return recommendations.slice(0, 4); // Limit to 4 recommendations
-}
-
-function AnimatedValue({ value, unit, prevValue }: { value: number; unit: string | null; prevValue?: number }) {
-  const [displayValue, setDisplayValue] = useState(value);
-  const [isAnimating, setIsAnimating] = useState(false);
-  
-  useEffect(() => {
-    if (prevValue !== undefined && prevValue !== value) {
-      setIsAnimating(true);
-      const duration = 500;
-      const steps = 20;
-      const increment = (value - prevValue) / steps;
-      let current = prevValue;
-      let step = 0;
-      
-      const interval = setInterval(() => {
-        step++;
-        current += increment;
-        setDisplayValue(current);
-        
-        if (step >= steps) {
-          clearInterval(interval);
-          setDisplayValue(value);
-          setIsAnimating(false);
-        }
-      }, duration / steps);
-      
-      return () => clearInterval(interval);
-    } else {
-      setDisplayValue(value);
-    }
-  }, [value, prevValue]);
-  
-  const trend = prevValue !== undefined ? value - prevValue : 0;
-  
-  return (
-    <div className="flex items-end gap-2">
-      <span className={`text-4xl font-bold tabular-nums transition-all duration-300 ${isAnimating ? "scale-105" : ""}`}>
-        {displayValue.toFixed(1)}
-      </span>
-      <span className="text-lg text-gray-500 mb-1">{unit || ""}</span>
-      {trend !== 0 && (
-        <span className={`flex items-center text-sm mb-1 ${trend > 0 ? "text-red-500" : "text-green-500"}`}>
-          {trend > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-          {Math.abs(trend).toFixed(1)}
-        </span>
-      )}
-    </div>
-  );
-}
-
-// Get icon for variable based on code or category
-function getVariableIcon(code: string, category: string): React.ComponentType<{ className?: string }> {
-  const codeUpper = code.toUpperCase();
-  if (codeUpper.includes("VOLT") || codeUpper.includes("V")) return Zap;
-  if (codeUpper.includes("AMP") || codeUpper.includes("A") || codeUpper.includes("CURRENT")) return Activity;
-  if (codeUpper.includes("TEMP") || codeUpper.includes("T")) return Thermometer;
-  if (codeUpper.includes("HUM") || codeUpper.includes("H")) return Droplets;
-  if (codeUpper.includes("WATER") || codeUpper.includes("WL") || codeUpper.includes("LEVEL")) return Droplets;
-  if (codeUpper.includes("POWER") || codeUpper.includes("PWR") || codeUpper.includes("KW")) return Zap;
-  if (codeUpper.includes("FREQ") || codeUpper.includes("HZ")) return Activity;
-  return categoryIcons[category] || Gauge;
-}
-
-// Variable-specific colors for charts
-const variableColors: Record<string, string> = {
-  voltage: "#f59e0b",
-  volt: "#f59e0b",
-  v: "#f59e0b",
-  amp: "#ef4444",
-  amps: "#ef4444",
-  current: "#ef4444",
-  power: "#8b5cf6",
-  pwr: "#8b5cf6",
-  kw: "#8b5cf6",
-  kwh: "#10b981",
-  energy: "#10b981",
-  temp: "#3b82f6",
-  temperature: "#3b82f6",
-  humidity: "#06b6d4",
-  water: "#0ea5e9",
-  level: "#0ea5e9",
-  freq: "#ec4899",
-  hz: "#ec4899",
-};
-
-function getVariableColor(code: string, fallback: string): string {
-  const codeLower = code.toLowerCase();
-  for (const [key, color] of Object.entries(variableColors)) {
-    if (codeLower.includes(key)) return color;
-  }
-  return fallback;
+  return recommendations.slice(0, 4);
 }
 
 function ReadingCard({ 
   variable, 
   value, 
-  prevValue,
   stats,
-  category,
-  isSelected
+  category 
 }: { 
   variable: Variable; 
   value: number; 
-  prevValue?: number;
   stats?: { min: number; max: number; avg: number };
   category: string;
-  isSelected?: boolean;
 }) {
   const colors = categoryColors[category] || categoryColors.other;
-  const varColor = getVariableColor(variable.code, colors.primary);
   const isInRange = (variable.minValue === null || value >= variable.minValue) && 
                     (variable.maxValue === null || value <= variable.maxValue);
   
-  // Calculate change from previous value
-  const change = prevValue !== undefined ? value - prevValue : 0;
-  const changePercent = prevValue !== undefined && prevValue !== 0 
-    ? ((change / prevValue) * 100) 
-    : 0;
-  
-  // Get icon for this variable
-  const VarIcon = getVariableIcon(variable.code, category);
+  const min = variable.minValue ?? (stats?.min ?? 0);
+  const max = variable.maxValue ?? (stats?.max ?? 100);
+  const range = max - min;
+  const percentage = Math.min(100, Math.max(0, ((value - min) / range) * 100));
   
   return (
-    <Card className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${!isInRange ? "ring-2 ring-amber-400" : ""} ${isSelected ? "ring-2 ring-[#f74780] ring-offset-2" : ""}`}>
-      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: `linear-gradient(to right, ${varColor}, ${varColor}88)` }} />
-      <CardContent className="p-4">
-        {/* Header with icon and label */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg" style={{ backgroundColor: `${varColor}15` }}>
-              <VarIcon className="h-4 w-4" style={{ color: varColor }} />
-            </div>
-            <span className="text-sm font-medium text-gray-700">{variable.label}</span>
-          </div>
+    <Card className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg ${!isInRange ? "ring-2 ring-amber-400" : ""}`}>
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colors.gradient}`} />
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium text-gray-600">{variable.label}</CardTitle>
           {!isInRange && <AlertTriangle className="h-4 w-4 text-amber-500" />}
         </div>
-        
-        {/* Current Value - Large */}
-        <div className="flex items-baseline gap-1 mb-2">
-          <span className="text-3xl font-bold tabular-nums" style={{ color: varColor }}>
-            {value.toFixed(1)}
-          </span>
-          <span className="text-sm text-gray-500">{variable.unit || ""}</span>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-end gap-2">
+          <span className="text-4xl font-bold tabular-nums">{value.toFixed(1)}</span>
+          <span className="text-lg text-gray-500 mb-1">{variable.unit || ""}</span>
         </div>
         
-        {/* Previous vs Current with Change Indicator */}
-        <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg mb-3">
-          <div className="text-xs">
-            <span className="text-gray-500">Previous: </span>
-            <span className="font-medium text-gray-700">
-              {prevValue !== undefined ? prevValue.toFixed(1) : "--"}{variable.unit || ""}
-            </span>
+        <div className="mt-4">
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full bg-gradient-to-r ${colors.gradient} transition-all duration-500 ease-out`}
+              style={{ width: `${percentage}%` }}
+            />
           </div>
-          {change !== 0 && (
-            <div className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-              change > 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
-            }`}>
-              {change > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-              <span>{Math.abs(changePercent).toFixed(1)}%</span>
-            </div>
-          )}
-          {change === 0 && prevValue !== undefined && (
-            <div className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-              <Minus className="h-3 w-3" />
-              <span>0%</span>
-            </div>
-          )}
+          <div className="flex justify-between mt-1 text-xs text-gray-400">
+            <span>{min}{variable.unit || ""}</span>
+            <span>{max}{variable.unit || ""}</span>
+          </div>
         </div>
         
-        {/* Stats Row */}
         {stats && (
-          <div className="flex justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+          <div className="flex justify-between mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
             <div className="flex items-center gap-1">
-              <TrendingDown className="h-3 w-3 text-blue-500" />
-              <span>Min: {stats.min.toFixed(1)}</span>
+              <TrendingDown className="h-3 w-3" />
+              <span>{stats.min.toFixed(1)}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Minus className="h-3 w-3 text-gray-400" />
-              <span>Avg: {stats.avg.toFixed(1)}</span>
+              <Minus className="h-3 w-3" />
+              <span>{stats.avg.toFixed(1)}</span>
             </div>
             <div className="flex items-center gap-1">
-              <TrendingUp className="h-3 w-3 text-green-500" />
-              <span>Max: {stats.max.toFixed(1)}</span>
+              <TrendingUp className="h-3 w-3" />
+              <span>{stats.max.toFixed(1)}</span>
             </div>
           </div>
         )}
@@ -351,9 +205,14 @@ function ReadingCard({
   );
 }
 
-export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
+interface AdminDeviceDashboardProps {
+  tenantId: string;
+  deviceId: string;
+  tenantName: string;
+}
+
+export default function AdminDeviceDashboard({ tenantId, deviceId, tenantName }: AdminDeviceDashboardProps) {
   const [data, setData] = useState<TelemetryData | null>(null);
-  const [prevReadings, setPrevReadings] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -363,23 +222,12 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
     if (isRefresh) setRefreshing(true);
     
     try {
-      const res = await fetch(`/api/portal/devices/${deviceId}/telemetry?hours=24&limit=200`);
+      const res = await fetch(`/api/admin/tenants/${tenantId}/devices/${deviceId}/telemetry?hours=24&limit=200`);
       if (!res.ok) throw new Error("Failed to fetch telemetry");
       
       const newData = await res.json();
-      
-      // Store previous readings for animation
-      if (data?.latestReadings) {
-        const prev: Record<string, number> = {};
-        for (const [code, reading] of Object.entries(data.latestReadings)) {
-          prev[code] = (reading as { value: number }).value;
-        }
-        setPrevReadings(prev);
-      }
-      
       setData(newData);
       
-      // Auto-select first variable for chart
       if (!selectedVariable && newData.variables.length > 0) {
         setSelectedVariable(newData.variables[0].code);
       }
@@ -389,12 +237,10 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [deviceId, data, selectedVariable]);
+  }, [tenantId, deviceId, selectedVariable]);
   
   useEffect(() => {
     fetchData();
-    
-    // Auto-refresh every 30 seconds
     const interval = setInterval(() => fetchData(true), 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
@@ -405,9 +251,9 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
         <div className="flex flex-col items-center gap-3">
           <div className="relative">
             <div className="h-12 w-12 rounded-full border-4 border-gray-200" />
-            <div className="absolute top-0 left-0 h-12 w-12 rounded-full border-4 border-t-[#f74780] animate-spin" />
+            <div className="absolute top-0 left-0 h-12 w-12 rounded-full border-4 border-t-purple-600 animate-spin" />
           </div>
-          <p className="text-gray-500">Loading dashboard...</p>
+          <p className="text-gray-500">Loading tenant device dashboard...</p>
         </div>
       </div>
     );
@@ -428,12 +274,10 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
   const recommendations = generateAIRecommendations(data, data.variables);
   
   // Device is online if last seen within 5 minutes (for real-time dashboard)
-  // Use 5 minutes for dashboard responsiveness, system health uses 3 hours for alerts
   const ONLINE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
   const isOnline = data.device.lastSeenAt && 
     (new Date().getTime() - new Date(data.device.lastSeenAt).getTime()) < ONLINE_THRESHOLD_MS;
   
-  // Calculate health score based on readings within range
   const calculateHealthScore = () => {
     if (data.variables.length === 0) return 100;
     let inRangeCount = 0;
@@ -448,12 +292,10 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
   };
   const healthScore = calculateHealthScore();
 
-  // Get primary variable for visualization
   const primaryVariable = data.variables[0];
   const primaryReading = primaryVariable ? data.latestReadings[primaryVariable.code] : null;
   const primaryStats = primaryVariable ? data.stats[primaryVariable.code] : null;
 
-  // Group variables by category for multi-category devices
   const groupVariablesByCategory = () => {
     const groups: Record<string, Variable[]> = {};
     for (const variable of data.variables) {
@@ -465,13 +307,8 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
   };
   
   const variableGroups = groupVariablesByCategory();
-  const uniqueCategories = Object.keys(variableGroups);
-  const isMultiCategory = uniqueCategories.length > 1;
-
-  // Check if this is a coldroom-type device (has temperature + humidity)
   const isColdroom = variableGroups.temperature && (variableGroups.humidity || variableGroups.power);
 
-  // Render device-specific visualization
   const renderDeviceVisualization = () => {
     if (!primaryVariable || !primaryReading) return null;
     
@@ -480,7 +317,6 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
     const isWarning = (primaryVariable.minValue !== null && primaryReading.value < primaryVariable.minValue) ||
                       (primaryVariable.maxValue !== null && primaryReading.value > primaryVariable.maxValue);
 
-    // For coldroom/multi-sensor devices, show combined visualization
     if (isColdroom) {
       const tempVar = variableGroups.temperature?.[0];
       const humidVar = variableGroups.humidity?.[0];
@@ -563,6 +399,19 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
   
   return (
     <div className="space-y-6">
+      {/* Admin Notice Banner */}
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-center gap-3">
+        <Building2 className="h-5 w-5 text-purple-600" />
+        <div>
+          <p className="text-sm font-medium text-purple-900">
+            Viewing as Admin - {tenantName}&apos;s Device Dashboard
+          </p>
+          <p className="text-xs text-purple-600">
+            This is a read-only view of what the tenant sees for this device.
+          </p>
+        </div>
+      </div>
+
       {/* Status Bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -606,7 +455,6 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
           <div className={`h-1 bg-gradient-to-r ${colors.gradient}`} />
           <CardContent className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-              {/* Device Health */}
               <div className="flex flex-col items-center">
                 <DeviceHealthSVG 
                   healthScore={healthScore} 
@@ -619,12 +467,10 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
                 </p>
               </div>
               
-              {/* Primary Visualization */}
               <div className="flex justify-center">
                 {renderDeviceVisualization()}
               </div>
               
-              {/* Quick Stats */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <Activity className="h-5 w-5 text-purple-500" />
@@ -657,24 +503,22 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
         </Card>
       )}
       
-      {/* Reading Cards - 4 per row */}
+      {/* Reading Cards */}
       {data.variables.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.variables.map((variable) => {
             const reading = data.latestReadings[variable.code];
             return reading ? (
               <div 
                 key={variable.code}
                 onClick={() => setSelectedVariable(variable.code)}
-                className="cursor-pointer"
+                className={`cursor-pointer transition-all ${selectedVariable === variable.code ? "ring-2 ring-purple-500 ring-offset-2" : ""}`}
               >
                 <ReadingCard
                   variable={variable}
                   value={reading.value}
-                  prevValue={prevReadings[variable.code]}
                   stats={data.stats[variable.code]}
                   category={category}
-                  isSelected={selectedVariable === variable.code}
                 />
               </div>
             ) : null;
@@ -690,199 +534,110 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
         </Card>
       )}
       
-      {/* Chart with Dropdown and Date/Time Filters */}
+      {/* Chart */}
       {selectedVariable && data.chartData[selectedVariable] && data.chartData[selectedVariable].length > 0 && (() => {
         const selectedVar = data.variables.find(v => v.code === selectedVariable);
         const selectedStats = data.stats[selectedVariable];
         const chartData = data.chartData[selectedVariable];
-        const varColor = getVariableColor(selectedVariable, colors.primary);
-        const VarIcon = getVariableIcon(selectedVariable, category);
         
         return (
-          <Card className="overflow-hidden">
-            <div className="h-1" style={{ background: `linear-gradient(to right, ${varColor}, ${varColor}66)` }} />
-            <CardHeader className="pb-2">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl" style={{ backgroundColor: `${varColor}15` }}>
-                    <VarIcon className="h-5 w-5" style={{ color: varColor }} />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">
-                      {selectedVar?.label || selectedVariable} Trend
-                    </CardTitle>
-                    {selectedStats && (
-                      <div className="flex items-center gap-4 mt-1 text-sm">
-                        <span className="flex items-center gap-1 text-green-600">
-                          <ArrowUp className="h-3 w-3" />
-                          {selectedStats.max.toFixed(1)}{selectedVar?.unit || ""}
-                        </span>
-                        <span className="flex items-center gap-1 text-blue-600">
-                          <ArrowDown className="h-3 w-3" />
-                          {selectedStats.min.toFixed(1)}{selectedVar?.unit || ""}
-                        </span>
-                        <span className="flex items-center gap-1 text-gray-500">
-                          <Minus className="h-3 w-3" />
-                          {selectedStats.avg.toFixed(1)}{selectedVar?.unit || ""}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">
+                    {selectedVar?.label || selectedVariable} Trend
+                  </CardTitle>
+                  {selectedStats && (
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <span className="flex items-center gap-1 text-green-600">
+                        <ArrowUp className="h-3 w-3" />
+                        High: {selectedStats.max.toFixed(1)}{selectedVar?.unit || ""}
+                      </span>
+                      <span className="flex items-center gap-1 text-blue-600">
+                        <ArrowDown className="h-3 w-3" />
+                        Low: {selectedStats.min.toFixed(1)}{selectedVar?.unit || ""}
+                      </span>
+                      <span className="flex items-center gap-1 text-gray-500">
+                        <Minus className="h-3 w-3" />
+                        Avg: {selectedStats.avg.toFixed(1)}{selectedVar?.unit || ""}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                
-                {/* Controls Row */}
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Variable Dropdown */}
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs text-gray-500 whitespace-nowrap">Variable:</Label>
-                    <Select value={selectedVariable} onValueChange={setSelectedVariable}>
-                      <SelectTrigger className="w-[140px] h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {data.variables.map((v) => {
-                          const vColor = getVariableColor(v.code, colors.primary);
-                          const VIcon = getVariableIcon(v.code, category);
-                          return (
-                            <SelectItem key={v.code} value={v.code}>
-                              <div className="flex items-center gap-2">
-                                <VIcon className="h-3 w-3" style={{ color: vColor }} />
-                                <span>{v.label}</span>
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Date Filter */}
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <Input
-                      type="date"
-                      className="w-[130px] h-8 text-sm"
-                      defaultValue={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                  
-                  {/* Time Range */}
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-400" />
-                    <Select defaultValue="24h">
-                      <SelectTrigger className="w-[100px] h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1h">Last 1h</SelectItem>
-                        <SelectItem value="6h">Last 6h</SelectItem>
-                        <SelectItem value="12h">Last 12h</SelectItem>
-                        <SelectItem value="24h">Last 24h</SelectItem>
-                        <SelectItem value="7d">Last 7d</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="flex gap-2">
+                  {data.variables.map((v) => (
+                    <Button
+                      key={v.code}
+                      variant={selectedVariable === v.code ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedVariable(v.code)}
+                      className={selectedVariable === v.code ? "bg-purple-600 hover:bg-purple-700" : ""}
+                    >
+                      {v.code}
+                    </Button>
+                  ))}
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                   <AreaChart data={Array.isArray(chartData) ? chartData : []}>
                     <defs>
-                      <linearGradient id={`colorValue-${selectedVariable}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={varColor} stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor={varColor} stopOpacity={0.05}/>
+                      <linearGradient id="colorValueAdmin" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis 
                       dataKey="time" 
                       tickFormatter={(t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       stroke="#9ca3af"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={{ stroke: '#e5e7eb' }}
+                      fontSize={12}
                     />
-                    <YAxis 
-                      stroke="#9ca3af" 
-                      fontSize={11} 
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `${v}${selectedVar?.unit || ""}`}
-                    />
+                    <YAxis stroke="#9ca3af" fontSize={12} />
                     <Tooltip 
                       labelFormatter={(t) => new Date(t).toLocaleString()}
-                      contentStyle={{ 
-                        borderRadius: "12px", 
-                        border: "none",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        padding: "12px"
-                      }}
+                      contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }}
                       formatter={(value) => value !== undefined ? [`${Number(value).toFixed(2)} ${selectedVar?.unit || ""}`, selectedVar?.label || "Value"] : ["", ""]}
                     />
-                    {/* High threshold line */}
                     {selectedVar?.maxValue !== null && selectedVar?.maxValue !== undefined && (
                       <ReferenceLine 
                         y={selectedVar.maxValue} 
                         stroke="#ef4444" 
                         strokeDasharray="5 5"
-                        strokeWidth={1.5}
-                        label={{ value: `Max: ${selectedVar.maxValue}`, position: "insideTopRight", fill: "#ef4444", fontSize: 10 }}
+                        label={{ value: `Max: ${selectedVar.maxValue}`, position: "right", fill: "#ef4444", fontSize: 10 }}
                       />
                     )}
-                    {/* Low threshold line */}
                     {selectedVar?.minValue !== null && selectedVar?.minValue !== undefined && (
                       <ReferenceLine 
                         y={selectedVar.minValue} 
                         stroke="#3b82f6" 
                         strokeDasharray="5 5"
-                        strokeWidth={1.5}
-                        label={{ value: `Min: ${selectedVar.minValue}`, position: "insideBottomRight", fill: "#3b82f6", fontSize: 10 }}
+                        label={{ value: `Min: ${selectedVar.minValue}`, position: "right", fill: "#3b82f6", fontSize: 10 }}
                       />
                     )}
-                    {/* Average line */}
                     {selectedStats && (
                       <ReferenceLine 
                         y={selectedStats.avg} 
                         stroke="#9ca3af" 
                         strokeDasharray="3 3"
-                        strokeWidth={1}
+                        label={{ value: `Avg`, position: "left", fill: "#9ca3af", fontSize: 10 }}
                       />
                     )}
                     <Area 
                       type="monotone" 
                       dataKey="value" 
-                      stroke={varColor}
-                      strokeWidth={2.5}
-                      fill={`url(#colorValue-${selectedVariable})`}
-                      animationDuration={1000}
+                      stroke="#8b5cf6"
+                      strokeWidth={2}
+                      fill="url(#colorValueAdmin)"
+                      animationDuration={1500}
                       animationEasing="ease-out"
-                      dot={false}
-                      activeDot={{ r: 6, fill: varColor, stroke: "#fff", strokeWidth: 2 }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
-              </div>
-              
-              {/* Chart Legend */}
-              <div className="flex items-center justify-center gap-6 mt-4 text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-0.5 rounded" style={{ backgroundColor: varColor }} />
-                  <span>{selectedVar?.label || "Value"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5 bg-red-500 rounded" style={{ borderStyle: "dashed" }} />
-                  <span>Max Threshold</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5 bg-blue-500 rounded" style={{ borderStyle: "dashed" }} />
-                  <span>Min Threshold</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5 bg-gray-400 rounded" style={{ borderStyle: "dashed" }} />
-                  <span>Average</span>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -893,7 +648,7 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Sparkles className="h-5 w-5 text-[#f74780]" />
+            <Sparkles className="h-5 w-5 text-purple-600" />
             AI Insights & Recommendations
           </CardTitle>
         </CardHeader>
