@@ -104,7 +104,12 @@ export async function GET(
     readings[code].push({
       time: reading.capturedAt.toISOString(),
       value: Number(reading.value),
-      formattedTime: formatAccraDate(reading.capturedAt, "MMM d, HH:mm"),
+      formattedTime: formatAccraDate(reading.capturedAt, { 
+        month: "short", 
+        day: "numeric", 
+        hour: "2-digit", 
+        minute: "2-digit" 
+      }),
     });
   }
 
