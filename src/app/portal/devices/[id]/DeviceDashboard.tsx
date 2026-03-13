@@ -290,7 +290,7 @@ function ReadingCard({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-lg" style={{ backgroundColor: `${varColor}15` }}>
-              <VarIcon className="h-4 w-4" style={{ color: varColor }} />
+              <span style={{ color: varColor }}><VarIcon className="h-4 w-4" /></span>
             </div>
             <span className="text-sm font-medium text-gray-700">{variable.label}</span>
           </div>
@@ -705,7 +705,7 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl" style={{ backgroundColor: `${varColor}15` }}>
-                    <VarIcon className="h-5 w-5" style={{ color: varColor }} />
+                    <span style={{ color: varColor }}><VarIcon className="h-5 w-5" /></span>
                   </div>
                   <div>
                     <CardTitle className="text-lg">
@@ -746,7 +746,7 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
                           return (
                             <SelectItem key={v.code} value={v.code}>
                               <div className="flex items-center gap-2">
-                                <VIcon className="h-3 w-3" style={{ color: vColor }} />
+                                <span style={{ color: vColor }}><VIcon className="h-3 w-3" /></span>
                                 <span>{v.label}</span>
                               </div>
                             </SelectItem>
