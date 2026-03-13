@@ -159,46 +159,59 @@ export function WaterTankSVG({ value, min, max, unit = "%", label = "Water Level
 
 // Power Meter Visualization
 export function PowerMeterSVG({ value, min, max, unit = "kW", label = "Power Usage", isWarning }: VisualizationProps) {
-  const needleRef = useRef<SVGGElement>(null);
-  const glowRef = useRef<SVGCircleElement>(null);
-  const valueRef = useRef<SVGTextElement>(null);
+  const needleRef = useRef<SVGLineElement>(null);
+  const dotRef = useRef<SVGCircleElement>(null);
   
   // Calculate percentage based on actual min/max range
   const range = max - min;
   const percentage = range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 50;
   
-  // Angle calculation: -135 degrees at 0%, +135 degrees at 100% (270 degree sweep)
-  const startAngle = -135;
+  // Gauge geometry - centered at (120, 100), radius 70
+  const cx = 120;
+  const cy = 100;
+  const radius = 70;
+  const innerRadius = 55;
+  const outerRadius = 75;
+  
+  // Arc spans from -135° to +135° (270° total sweep)
+  const startAngleDeg = -135;
+  const endAngleDeg = 135;
   const sweepAngle = 270;
-  const angle = startAngle + (percentage / 100) * sweepAngle;
+  
+  // Current needle angle based on value
+  const needleAngleDeg = startAngleDeg + (percentage / 100) * sweepAngle;
+  const needleAngleRad = (needleAngleDeg * Math.PI) / 180;
+  
+  // Needle end point
+  const needleLength = 50;
+  const needleX = cx + needleLength * Math.cos(needleAngleRad);
+  const needleY = cy + needleLength * Math.sin(needleAngleRad);
   
   useEffect(() => {
     if (needleRef.current) {
+      const angleRad = (needleAngleDeg * Math.PI) / 180;
+      const endX = cx + needleLength * Math.cos(angleRad);
+      const endY = cy + needleLength * Math.sin(angleRad);
+      
       gsap.to(needleRef.current, {
-        rotation: angle,
-        transformOrigin: "100 100",
-        duration: 1.5,
-        ease: "elastic.out(1, 0.5)",
+        attr: { x2: endX, y2: endY },
+        duration: 1,
+        ease: "power2.out",
       });
     }
     
-    if (glowRef.current) {
-      gsap.to(glowRef.current, {
-        opacity: percentage > 80 ? 0.8 : 0.3,
-        scale: percentage > 80 ? 1.1 : 1,
-        duration: 0.5,
-        repeat: percentage > 80 ? -1 : 0,
-        yoyo: true,
+    if (dotRef.current) {
+      const angleRad = (needleAngleDeg * Math.PI) / 180;
+      const dotX = cx + (needleLength - 5) * Math.cos(angleRad);
+      const dotY = cy + (needleLength - 5) * Math.sin(angleRad);
+      
+      gsap.to(dotRef.current, {
+        attr: { cx: dotX, cy: dotY },
+        duration: 1,
+        ease: "power2.out",
       });
     }
-    
-    if (valueRef.current) {
-      gsap.fromTo(valueRef.current,
-        { scale: 0.8 },
-        { scale: 1, duration: 0.5, ease: "back.out" }
-      );
-    }
-  }, [angle, percentage]);
+  }, [needleAngleDeg]);
   
   const getColor = () => {
     if (isWarning || percentage > 80) return "#ef4444";
@@ -206,66 +219,89 @@ export function PowerMeterSVG({ value, min, max, unit = "kW", label = "Power Usa
     return "#10b981";
   };
 
-  // Calculate arc length for the progress indicator
-  const arcLength = 220; // Approximate length of the arc path
-  const progressLength = (percentage / 100) * arcLength;
+  // Create arc path
+  const createArc = (startDeg: number, endDeg: number, r: number) => {
+    const startRad = (startDeg * Math.PI) / 180;
+    const endRad = (endDeg * Math.PI) / 180;
+    const x1 = cx + r * Math.cos(startRad);
+    const y1 = cy + r * Math.sin(startRad);
+    const x2 = cx + r * Math.cos(endRad);
+    const y2 = cy + r * Math.sin(endRad);
+    const largeArc = endDeg - startDeg > 180 ? 1 : 0;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
+  };
+
+  // Progress arc (from start to current value)
+  const progressEndDeg = startAngleDeg + (percentage / 100) * sweepAngle;
+  
+  // Generate tick marks
+  const ticks = [0, 20, 40, 60, 80, 100];
   
   return (
     <div className="flex flex-col items-center">
-      <svg width="200" height="160" viewBox="0 0 200 160">
+      <svg width="240" height="150" viewBox="0 0 240 150">
         <defs>
-          <linearGradient id="meterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#10b981" />
             <stop offset="50%" stopColor="#f59e0b" />
             <stop offset="100%" stopColor="#ef4444" />
           </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
+          <filter id="needleShadow">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.3"/>
           </filter>
         </defs>
         
         {/* Background arc */}
         <path
-          d="M 30 130 A 70 70 0 1 1 170 130"
+          d={createArc(startAngleDeg, endAngleDeg, radius)}
           fill="none"
           stroke="#e5e7eb"
-          strokeWidth="12"
+          strokeWidth="14"
           strokeLinecap="round"
         />
         
-        {/* Colored arc - progress indicator */}
+        {/* Colored progress arc */}
         <path
-          d="M 30 130 A 70 70 0 1 1 170 130"
+          d={createArc(startAngleDeg, endAngleDeg, radius)}
           fill="none"
-          stroke="url(#meterGradient)"
-          strokeWidth="8"
+          stroke="url(#gaugeGradient)"
+          strokeWidth="10"
           strokeLinecap="round"
-          strokeDasharray={`${progressLength} ${arcLength}`}
         />
         
-        {/* Tick marks with labels */}
-        {[0, 25, 50, 75, 100].map((tick) => {
-          const tickAngle = (startAngle + (tick / 100) * sweepAngle) * (Math.PI / 180);
-          const x1 = 100 + 55 * Math.cos(tickAngle);
-          const y1 = 100 + 55 * Math.sin(tickAngle);
-          const x2 = 100 + 65 * Math.cos(tickAngle);
-          const y2 = 100 + 65 * Math.sin(tickAngle);
-          const labelX = 100 + 78 * Math.cos(tickAngle);
-          const labelY = 100 + 78 * Math.sin(tickAngle);
+        {/* Tick marks and labels */}
+        {ticks.map((tick) => {
+          const tickAngleDeg = startAngleDeg + (tick / 100) * sweepAngle;
+          const tickAngleRad = (tickAngleDeg * Math.PI) / 180;
+          
+          // Tick line positions
+          const x1 = cx + innerRadius * Math.cos(tickAngleRad);
+          const y1 = cy + innerRadius * Math.sin(tickAngleRad);
+          const x2 = cx + (innerRadius + 8) * Math.cos(tickAngleRad);
+          const y2 = cy + (innerRadius + 8) * Math.sin(tickAngleRad);
+          
+          // Label position
+          const labelR = outerRadius + 12;
+          const labelX = cx + labelR * Math.cos(tickAngleRad);
+          const labelY = cy + labelR * Math.sin(tickAngleRad);
+          
+          // Calculate actual value for this tick
           const tickValue = min + (tick / 100) * range;
+          
           return (
             <g key={tick}>
-              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#9ca3af" strokeWidth="2" />
+              <line 
+                x1={x1} y1={y1} x2={x2} y2={y2} 
+                stroke="#6b7280" 
+                strokeWidth="2" 
+              />
               <text 
                 x={labelX} 
-                y={labelY + 3} 
+                y={labelY + 4} 
                 textAnchor="middle" 
-                fontSize="8" 
-                fill="#9ca3af"
+                fontSize="10" 
+                fill="#6b7280"
+                fontWeight="500"
               >
                 {tickValue.toFixed(0)}
               </text>
@@ -273,43 +309,46 @@ export function PowerMeterSVG({ value, min, max, unit = "kW", label = "Power Usa
           );
         })}
         
-        {/* Center glow */}
-        <circle 
-          ref={glowRef}
-          cx="100" 
-          cy="100" 
-          r="15"
-          fill={getColor()}
-          opacity="0.3"
-          filter="url(#glow)"
-          style={{ transformOrigin: "100px 100px" }}
+        {/* Center hub */}
+        <circle cx={cx} cy={cy} r="12" fill="#374151" />
+        <circle cx={cx} cy={cy} r="8" fill="#1f2937" />
+        <circle cx={cx} cy={cy} r="4" fill="#6b7280" />
+        
+        {/* Needle */}
+        <line
+          ref={needleRef}
+          x1={cx}
+          y1={cy}
+          x2={needleX}
+          y2={needleY}
+          stroke="#1f2937"
+          strokeWidth="3"
+          strokeLinecap="round"
+          filter="url(#needleShadow)"
         />
         
-        {/* Needle - starts pointing up and rotates based on value */}
-        <g ref={needleRef} style={{ transformOrigin: "100px 100px" }}>
-          <polygon 
-            points="100,100 96,106 100,35 104,106"
-            fill={getColor()}
-          />
-          <circle cx="100" cy="100" r="10" fill={getColor()} />
-          <circle cx="100" cy="100" r="5" fill="white" />
-        </g>
+        {/* Needle tip indicator */}
+        <circle
+          ref={dotRef}
+          cx={cx + (needleLength - 5) * Math.cos(needleAngleRad)}
+          cy={cy + (needleLength - 5) * Math.sin(needleAngleRad)}
+          r="4"
+          fill={getColor()}
+        />
         
         {/* Value display */}
         <text 
-          ref={valueRef}
-          x="100" 
-          y="145"
+          x={cx} 
+          y={cy + 40}
           textAnchor="middle" 
-          fontSize="18" 
+          fontSize="20" 
           fontWeight="bold"
           fill={getColor()}
-          style={{ transformOrigin: "100px 145px" }}
         >
           {value.toFixed(1)} {unit}
         </text>
       </svg>
-      <p className="text-sm font-medium text-gray-600 mt-1">{label}</p>
+      <p className="text-sm font-medium text-gray-600 -mt-1">{label}</p>
     </div>
   );
 }

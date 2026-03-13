@@ -20,6 +20,8 @@ export async function GET(
   const url = new URL(req.url);
   const hours = parseInt(url.searchParams.get("hours") || "24");
   const limit = parseInt(url.searchParams.get("limit") || "100");
+  const startDateParam = url.searchParams.get("startDate");
+  const endDateParam = url.searchParams.get("endDate");
 
   // Verify device belongs to tenant
   const device = await prisma.tenantDevice.findFirst({
@@ -50,13 +52,27 @@ export async function GET(
       })
     : [];
 
-  // Get telemetry data
-  const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+  // Calculate date range for telemetry query
+  let startDate: Date;
+  let endDate: Date;
+  
+  if (startDateParam && endDateParam) {
+    // Use provided date range
+    startDate = new Date(startDateParam);
+    endDate = new Date(endDateParam);
+  } else {
+    // Default: last N hours
+    endDate = new Date();
+    startDate = new Date(Date.now() - hours * 60 * 60 * 1000);
+  }
   
   const telemetry = await prisma.telemetryKv.findMany({
     where: {
       tenantDeviceId: device.id,
-      capturedAt: { gte: since },
+      capturedAt: { 
+        gte: startDate,
+        lte: endDate,
+      },
     },
     orderBy: { capturedAt: "desc" },
     take: limit,

@@ -351,6 +351,15 @@ function ReadingCard({
   );
 }
 
+// Time range options in hours
+const timeRangeOptions: Record<string, number> = {
+  "1h": 1,
+  "6h": 6,
+  "12h": 12,
+  "24h": 24,
+  "7d": 168,
+};
+
 export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
   const [data, setData] = useState<TelemetryData | null>(null);
   const [prevReadings, setPrevReadings] = useState<Record<string, number>>({});
@@ -358,6 +367,52 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedVariable, setSelectedVariable] = useState<string | null>(null);
+  
+  // Chart filter state
+  const [chartDate, setChartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [chartTimeRange, setChartTimeRange] = useState<string>("24h");
+  const [chartData, setChartData] = useState<Array<{ time: string; value: number }>>([]);
+  const [chartLoading, setChartLoading] = useState(false);
+  
+  // Fetch chart data based on filters
+  const fetchChartData = useCallback(async () => {
+    if (!selectedVariable) return;
+    
+    setChartLoading(true);
+    try {
+      const hours = timeRangeOptions[chartTimeRange] || 24;
+      // Calculate start date based on selected date and time range
+      const endDate = new Date(chartDate);
+      endDate.setHours(23, 59, 59, 999);
+      const startDate = new Date(endDate.getTime() - hours * 60 * 60 * 1000);
+      
+      const params = new URLSearchParams({
+        hours: hours.toString(),
+        limit: "500",
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      });
+      
+      const res = await fetch(`/api/portal/devices/${deviceId}/telemetry?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch chart data");
+      
+      const result = await res.json();
+      if (result.chartData && result.chartData[selectedVariable]) {
+        setChartData(result.chartData[selectedVariable]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch chart data:", err);
+    } finally {
+      setChartLoading(false);
+    }
+  }, [deviceId, selectedVariable, chartDate, chartTimeRange]);
+  
+  // Fetch chart data when filters change
+  useEffect(() => {
+    if (selectedVariable) {
+      fetchChartData();
+    }
+  }, [selectedVariable, chartDate, chartTimeRange, fetchChartData]);
   
   const fetchData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -382,6 +437,16 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
       // Auto-select first variable for chart
       if (!selectedVariable && newData.variables.length > 0) {
         setSelectedVariable(newData.variables[0].code);
+      }
+      
+      // Initialize chart data from main fetch
+      if (newData.chartData && selectedVariable && newData.chartData[selectedVariable]) {
+        setChartData(newData.chartData[selectedVariable]);
+      } else if (newData.chartData && newData.variables.length > 0) {
+        const firstVar = newData.variables[0].code;
+        if (newData.chartData[firstVar]) {
+          setChartData(newData.chartData[firstVar]);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -762,14 +827,15 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
                     <Input
                       type="date"
                       className="w-[130px] h-8 text-sm"
-                      defaultValue={new Date().toISOString().split('T')[0]}
+                      value={chartDate}
+                      onChange={(e) => setChartDate(e.target.value)}
                     />
                   </div>
                   
                   {/* Time Range */}
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-400" />
-                    <Select defaultValue="24h">
+                    <Select value={chartTimeRange} onValueChange={setChartTimeRange}>
                       <SelectTrigger className="w-[100px] h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
@@ -782,6 +848,14 @@ export default function DeviceDashboard({ deviceId }: { deviceId: string }) {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {/* Loading indicator */}
+                  {chartLoading && (
+                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <span>Loading...</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardHeader>
